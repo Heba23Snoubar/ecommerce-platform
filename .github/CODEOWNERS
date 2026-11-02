@@ -1,0 +1,10 @@
+/src/AppService/Modules/Users/              @amerbarhouk @ahmad-khaled-dev 
+/src/AppService/Modules/Products/           @Heba-Abbas @amerbarhouk 
+/src/AppService/Modules/Orders/             @khadijheh @Heba-Abbas 
+/src/AppService/Modules/Notifications/      @Heba23Snoubar @khadijheh 
+/src/AppService/Shared/                     @Heba23Snoubar @ahmad-khaled-dev 
+/src/AppService/Infrastructure.Warehouse/   @Heba23Snoubar @ahmad-khaled-dev 
+/src/WarehouseService/                      @ahmad-khaled-dev @Heba23Snoubar 
+/protos/                                    @ahmad-khaled-dev @Heba23Snoubar 
+/docker-compose.yml                         @Heba23Snoubar @ahmad-khaled-dev 
+/docs/                                      @ahmad-khaled-dev @Heba23Snoubar
