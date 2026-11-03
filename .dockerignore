@@ -1,0 +1,12 @@
+# .NET build artifacts
+**/bin/
+**/obj/
+
+# Git
+.git/
+
+# Environment variables and secrets
+.env
+
+# Node.js dependencies
+**/node_modules/
