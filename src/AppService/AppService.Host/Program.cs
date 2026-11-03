@@ -1,20 +1,58 @@
+using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
+using Shared.Errors;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Controllers + Unified Validation Errors
+builder.Services.AddControllers()
+.ConfigureApiBehaviorOptions(options =>
+{
+options.InvalidModelStateResponseFactory = context =>
+{
+var details = context.ModelState
+.Where(entry => entry.Value!.Errors.Count > 0)
+.SelectMany(entry => entry.Value!.Errors.Select(error =>
+$"{entry.Key}: {error.ErrorMessage}"));
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+        var error = new ApiError(
+            "VALIDATION_ERROR",
+            "البيانات المدخلة غير صحيحة",
+            details
+        );
+
+        return new ObjectResult(error)
+        {
+            StatusCode = 422
+        };
+    };
+});
+
+
+// API Versioning
+builder.Services.AddApiVersioning(options =>
+{
+options.DefaultApiVersion = new ApiVersion(1, 0);
+options.AssumeDefaultVersionWhenUnspecified = true;
+options.ReportApiVersions = true;
+}).AddMvc();
+
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Swagger
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 }
+
+// Error Handling Middleware
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
