@@ -1,14 +1,15 @@
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
-
 using Asp.Versioning;
-
+using Catalog.Module.Endpoints.Contoller;
+using Catalog.Module.Infrastructure;
+using Infrastructure.Warehouse;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
-
 using Notifications.Module;
 using Orders.Module;
 using Shared.Errors;
@@ -16,36 +17,12 @@ using Users.Module;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers + Unified Validation Errors
-builder.Services
-    .AddControllers()
-    .AddApplicationPart(typeof(UsersModule).Assembly)
-    .AddApplicationPart(OrdersModule.ModuleAssembly)
-    .AddApplicationPart(NotificationsModuleExtensions.ModuleAssembly)
-    .ConfigureApiBehaviorOptions(options =>
-    {
-        options.InvalidModelStateResponseFactory = context =>
-        {
-            var details = context.ModelState
-                .Where(entry => entry.Value!.Errors.Count > 0)
-                .SelectMany(entry => entry.Value!.Errors.Select(error =>
-                    $"{entry.Key}: {error.ErrorMessage}"));
-
-            var error = new ApiError(
-                "VALIDATION_ERROR",
-                "Invalid input data.",
-                details
-            );
-
-            return new ObjectResult(error)
-            {
-                StatusCode = 422
-            };
-        };
-    });
-
-// Register Users Module
+// Register Modules & Infrastructure
 builder.Services.AddUsersModule(builder.Configuration);
+builder.Services.AddOrdersModule(builder.Configuration);
+builder.Services.AddCatalogInfrastructure(builder.Configuration);
+builder.Services.AddNotificationsModule(builder.Configuration);
+builder.Services.AddWarehouseInfrastructure(builder.Configuration);
 
 // JWT Configuration
 var jwtKey = builder.Configuration["JWT_KEY"]
@@ -99,10 +76,10 @@ builder.Services
                 NameClaimType = ClaimTypes.Name,
                 RoleClaimType = ClaimTypes.Role,
 
-                ValidAlgorithms = new[]
-                {
+                ValidAlgorithms =
+                [
                     SecurityAlgorithms.HmacSha256
-                }
+                ]
             };
     });
 
@@ -142,9 +119,36 @@ builder.Services.AddRateLimiter(options =>
     };
 });
 
-// Register Modules
-builder.Services.AddOrdersModule(builder.Configuration);
-builder.Services.AddNotificationsModule(builder.Configuration);
+// Controllers + Application Parts + Validation + Enums
+builder.Services.AddControllers()
+    .AddApplicationPart(typeof(UsersModule).Assembly)
+    .AddApplicationPart(OrdersModule.ModuleAssembly)
+    .AddApplicationPart(typeof(ProductsController).Assembly)
+    .AddApplicationPart(NotificationsModuleExtensions.ModuleAssembly)
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()))
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var details = context.ModelState
+                .Where(entry => entry.Value!.Errors.Count > 0)
+                .SelectMany(entry => entry.Value!.Errors.Select(error =>
+                    $"{entry.Key}: {error.ErrorMessage}"));
+
+            var error = new ApiError(
+                "VALIDATION_ERROR",
+                "البيانات المدخلة غير صحيحة",
+                details
+            );
+
+            return new ObjectResult(error)
+            {
+                StatusCode = 422
+            };
+        };
+    });
 
 // API Versioning
 builder.Services.AddApiVersioning(options =>
@@ -165,7 +169,7 @@ var app = builder.Build();
 app.Services.MigrateOrdersModule();
 app.Services.MigrateNotificationsModule();
 
-// Swagger
+// Swagger UI
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -181,7 +185,7 @@ app.UseRouting();
 
 app.UseRateLimiter();
 
-// Authentication must come before Authorization
+// Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
