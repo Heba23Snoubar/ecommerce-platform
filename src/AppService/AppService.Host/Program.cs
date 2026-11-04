@@ -11,6 +11,16 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Orders.Module;
 using Shared.Errors;
+using Catalog.Module.Infrastructure;
+using Catalog.Module.Endpoints.Contoller;
+using Infrastructure.Warehouse;
+
+var builder = WebApplication.CreateBuilder(args);
+
+
+
+builder.Services.AddWarehouseInfrastructure(builder.Configuration);
+
 using Users.Module;
 
 var builder = WebApplication.CreateBuilder(args);

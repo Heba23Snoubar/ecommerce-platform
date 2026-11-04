@@ -1,0 +1,172 @@
+﻿|-- AppService
+|   |-- AppService.Host
+|   |   |-- Properties
+|   |   |   \-- launchSettings.json
+|   |   |-- AppService.Host.csproj
+|   |   |-- AppService.Host.csproj.user
+|   |   |-- AppService.Host.http
+|   |   |-- appsettings.Development.json
+|   |   |-- appsettings.json
+|   |   \-- Program.cs
+|   |-- Infrastructure.Warehouse
+|   |   \-- Infrastructure.Warehouse.csproj
+|   |-- Modules
+|   |   |-- Notifications
+|   |   |   |-- Notifications.Contracts
+|   |   |   |   \-- Notifications.Contracts.csproj
+|   |   |   \-- Notifications.Module
+|   |   |       \-- Notifications.Module.csproj
+|   |   |-- Orders
+|   |   |   |-- Orders.Contracts
+|   |   |   |   |-- IOrdersApi.cs
+|   |   |   |   |-- OrderDtos.cs
+|   |   |   |   |-- Orders.Contracts.csproj
+|   |   |   |   \-- OrderStatus.cs
+|   |   |   \-- Orders.Module
+|   |   |       |-- Controllers
+|   |   |       |   \-- V1
+|   |   |       |       \-- OrdersController.cs
+|   |   |       |-- Data
+|   |   |       |   |-- Migrations
+|   |   |       |   |   |-- 20261101103644_InitialOrders.cs
+|   |   |       |   |   |-- 20261101103644_InitialOrders.Designer.cs
+|   |   |       |   |   \-- OrdersDbContextModelSnapshot.cs
+|   |   |       |   |-- Order.cs
+|   |   |       |   \-- OrdersDbContext.cs
+|   |   |       |-- Services
+|   |   |       |   \-- OrdersService.cs
+|   |   |       |-- Stubs
+|   |   |       |   |-- FakeProductCatalog.cs
+|   |   |       |   \-- FakeStockReservation.cs
+|   |   |       |-- Orders.Module.csproj
+|   |   |       |-- OrdersModule.cs
+|   |   |       \-- Ports.cs
+|   |   |-- Products
+|   |   |   |-- Products.Contracts
+|   |   |   |   |-- Category
+|   |   |   |   |   |-- DTOs
+|   |   |   |   |   |   \-- CategoryInfoDto.cs
+|   |   |   |   |   |-- Events
+|   |   |   |   |   |   |-- CategoryCreatedEvent.cs
+|   |   |   |   |   |   |-- CategoryDeletedEvent.cs
+|   |   |   |   |   |   \-- CategoryUpdatedEvent.cs
+|   |   |   |   |   \-- Interfaces
+|   |   |   |   |       \-- ICategoryQueryService.cs
+|   |   |   |   |-- Product
+|   |   |   |   |   |-- DTOs
+|   |   |   |   |   |   |-- ProductImageInfoDto.cs
+|   |   |   |   |   |   \-- ProductInfoDto.cs
+|   |   |   |   |   |-- Events
+|   |   |   |   |   |   |-- ProductAvailabilityChangedEvent.cs
+|   |   |   |   |   |   |-- ProductCreatedEvent.cs
+|   |   |   |   |   |   |-- ProductDeletedEvent.cs
+|   |   |   |   |   |   \-- ProductUpdatedEvent.cs
+|   |   |   |   |   \-- Interfaces
+|   |   |   |   |       \-- IProductQueryService.cs
+|   |   |   |   \-- Products.Contract.csproj
+|   |   |   \-- Products.Module
+|   |   |       |-- Application
+|   |   |       |   |-- Abstraction
+|   |   |       |   |   |-- Interfaces
+|   |   |       |   |   |   \-- IUnitOfWork.cs
+|   |   |       |   |   \-- Repositories
+|   |   |       |   |       |-- ICategoryRepository.cs
+|   |   |       |   |       \-- IProductRepository.cs
+|   |   |       |   |-- Common
+|   |   |       |   |   |-- Models
+|   |   |       |   |   |   \-- PagedResult.cs
+|   |   |       |   |   \-- Results
+|   |   |       |   |       |-- ServiceErrorType.cs
+|   |   |       |   |       \-- ServiceResult.cs
+|   |   |       |   |-- DTOs
+|   |   |       |   |   |-- Categories
+|   |   |       |   |   |   |-- CategoryDto.cs
+|   |   |       |   |   |   |-- CreateCategoryRequest.cs
+|   |   |       |   |   |   \-- UpdateCategoryRequest.cs
+|   |   |       |   |   \-- Products
+|   |   |       |   |       |-- ChangeProductPriceRequest.cs
+|   |   |       |   |       |-- CreateProductRequest.cs
+|   |   |       |   |       |-- ProductDetailsDto.cs
+|   |   |       |   |       |-- ProductFilter.cs
+|   |   |       |   |       |-- ProductImageDto.cs
+|   |   |       |   |       |-- ProductImageRequest.cs
+|   |   |       |   |       |-- ProductListDto.cs
+|   |   |       |   |       \-- UpdateProductRequest.cs
+|   |   |       |   \-- Services
+|   |   |       |       |-- Implementations
+|   |   |       |       |   |-- CategoryQueryService.cs
+|   |   |       |       |   |-- CategoryService.cs
+|   |   |       |       |   |-- ProductQueryService.cs
+|   |   |       |       |   \-- ProductService.cs
+|   |   |       |       \-- Interfaces
+|   |   |       |           |-- ICategoryService.cs
+|   |   |       |           \-- IProductService.cs
+|   |   |       |-- Domain
+|   |   |       |   |-- Common
+|   |   |       |   |   \-- BaseEntity.cs
+|   |   |       |   \-- Entities
+|   |   |       |       |-- Category.cs
+|   |   |       |       |-- Product.cs
+|   |   |       |       \-- ProductImage.cs
+|   |   |       |-- Endpoints
+|   |   |       |   \-- Contoller
+|   |   |       |       |-- CategoriesController.cs
+|   |   |       |       \-- ProductsController.cs
+|   |   |       |-- Infrastructure
+|   |   |       |   |-- Config
+|   |   |       |   |   |-- CategoryConfiguration.cs
+|   |   |       |   |   |-- ProductConfiguration.cs
+|   |   |       |   |   \-- ProductImageConfiguration.cs
+|   |   |       |   |-- Persistence
+|   |   |       |   |   |-- CatalogDbContext.cs
+|   |   |       |   |   \-- UnitOfWork.cs
+|   |   |       |   |-- Repositories
+|   |   |       |   |   |-- CategoryRepository .cs
+|   |   |       |   |   \-- ProductRepository .cs
+|   |   |       |   \-- DependencyInjection.cs
+|   |   |       |-- Migrations
+|   |   |       |   |-- 20261104092027_InitialProductsTables.cs
+|   |   |       |   |-- 20261104092027_InitialProductsTables.Designer.cs
+|   |   |       |   |-- 20261104105934_CategoryTables.cs
+|   |   |       |   |-- 20261104105934_CategoryTables.Designer.cs
+|   |   |       |   \-- CatalogDbContextModelSnapshot.cs
+|   |   |       |-- Catalog.Module.csproj.Backup.tmp
+|   |   |       \-- Products.Module.csproj
+|   |   \-- Users
+|   |       |-- Users.Contracts
+|   |       |   \-- Users.Contracts.csproj
+|   |       \-- Users.Module
+|   |           \-- Users.Module.csproj
+|   |-- Shared
+|   |   |-- Errors
+|   |   |   |-- ApiError.cs
+|   |   |   |-- AppException.cs
+|   |   |   \-- ErrorHandlingMiddleware.cs
+|   |   \-- Shared.csproj
+|   \-- Dockerfile
+|-- WarehouseService
+|   |-- out
+|   |   |-- appsettings.Development.json
+|   |   |-- appsettings.json
+|   |   |-- Warehouse.Api.deps.json
+|   |   |-- Warehouse.Api.runtimeconfig.json
+|   |   |-- Warehouse.Api.staticwebassets.endpoints.json
+|   |   \-- web.config
+|   |-- Warehouse.Api
+|   |   |-- Data
+|   |   |   \-- WarehouseDbContext.cs
+|   |   |-- Entities
+|   |   |   |-- Reservation.cs
+|   |   |   \-- Stock.cs
+|   |   |-- Properties
+|   |   |   \-- launchSettings.json
+|   |   |-- Services
+|   |   |   \-- WarehouseGrpcService.cs
+|   |   |-- appsettings.Development.json
+|   |   |-- appsettings.json
+|   |   |-- Program.cs
+|   |   |-- Warehouse.Api.csproj
+|   |   \-- Warehouse.Api.csproj.user
+|   |-- Dockerfile
+|   \-- WarehouseService.sln
+\-- project-structure.txt
