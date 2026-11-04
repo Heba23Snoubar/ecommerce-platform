@@ -1,33 +1,36 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Errors;
+using Catalog.Module.Infrastructure;
+using Catalog.Module.Endpoints.Contoller;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers + Unified Validation Errors
 builder.Services.AddControllers()
-.ConfigureApiBehaviorOptions(options =>
-{
-options.InvalidModelStateResponseFactory = context =>
-{
-var details = context.ModelState
-.Where(entry => entry.Value!.Errors.Count > 0)
-.SelectMany(entry => entry.Value!.Errors.Select(error =>
-$"{entry.Key}: {error.ErrorMessage}"));
-
-
-        var error = new ApiError(
-            "VALIDATION_ERROR",
-            "البيانات المدخلة غير صحيحة",
-            details
-        );
-
-        return new ObjectResult(error)
+    .AddApplicationPart(typeof(ProductsController).Assembly)
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
         {
-            StatusCode = 422
+            var details = context.ModelState
+                .Where(entry => entry.Value!.Errors.Count > 0)
+                .SelectMany(entry => entry.Value!.Errors.Select(error =>
+                    $"{entry.Key}: {error.ErrorMessage}"));
+
+            var error = new ApiError(
+                "VALIDATION_ERROR",
+                "البيانات المدخلة غير صحيحة",
+                details
+            );
+
+            return new ObjectResult(error)
+            {
+                StatusCode = 422
+            };
         };
-    };
-});
+    });
+ 
+ 
 
 
 // API Versioning
@@ -40,6 +43,7 @@ options.ReportApiVersions = true;
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddCatalogInfrastructure(builder.Configuration);
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();

@@ -59,12 +59,13 @@ namespace E.Domain.Entites
         public void ChangePrice(decimal newPrice)
         {
             if (newPrice <= 0)
-                throw new ArgumentException("Price must be greater than zero.");
+                throw new ArgumentOutOfRangeException(
+                    nameof(newPrice),
+                    "Product price must be greater than zero.");
 
             Price = newPrice;
             UpdatedAt = DateTime.UtcNow;
         }
-
         public void Disable()
         {
             IsAvailable = false;
@@ -117,6 +118,7 @@ namespace E.Domain.Entites
         }
 
 
+
         public void RemoveImage(Guid imageId)
         {
             var image = Images.FirstOrDefault(i => i.Id == imageId);
@@ -128,6 +130,32 @@ namespace E.Domain.Entites
 
             UpdatedAt = DateTime.UtcNow;
         }
-    }
+    public void Rename(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException(
+                    "Product name is required.",
+                    nameof(name));
 
-}
+            Name = name.Trim();
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void ChangeDescription(string? description)
+        {
+            Description = description?.Trim();
+            UpdatedAt = DateTime.UtcNow;
+        }
+        public void ChangeCategory(Guid categoryId)
+        {
+            if (categoryId == Guid.Empty)
+                throw new ArgumentException(
+                    "Category ID is required.",
+                    nameof(categoryId));
+
+            CategoryId = categoryId;
+            UpdatedAt = DateTime.UtcNow;
+        }
+        
+    }
+    }

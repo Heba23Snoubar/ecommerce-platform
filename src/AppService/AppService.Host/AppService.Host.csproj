@@ -8,13 +8,17 @@
 
   <ItemGroup>
     <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.*">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Modules\Users\Users.Module\Users.Module.csproj" />
     <ProjectReference Include="..\Modules\Orders\Orders.Module\Orders.Module.csproj" />
-    <ProjectReference Include="..\Modules\Products\Products.Module\Catalog.Module.csproj" />
+	  <ProjectReference Include="..\Modules\Products\Products.Module\Products.Module.csproj" />
     <ProjectReference Include="..\Modules\Notifications\Notifications.Module\Notifications.Module.csproj" />
     <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
