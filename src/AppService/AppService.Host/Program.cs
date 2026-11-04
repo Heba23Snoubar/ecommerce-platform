@@ -1,15 +1,48 @@
 using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
+
 using Asp.Versioning;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
+
+using Notifications.Module;
+using Orders.Module;
 using Shared.Errors;
 using Users.Module;
-using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Controllers + Unified Validation Errors
+builder.Services
+    .AddControllers()
+    .AddApplicationPart(typeof(UsersModule).Assembly)
+    .AddApplicationPart(OrdersModule.ModuleAssembly)
+    .AddApplicationPart(NotificationsModuleExtensions.ModuleAssembly)
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var details = context.ModelState
+                .Where(entry => entry.Value!.Errors.Count > 0)
+                .SelectMany(entry => entry.Value!.Errors.Select(error =>
+                    $"{entry.Key}: {error.ErrorMessage}"));
+
+            var error = new ApiError(
+                "VALIDATION_ERROR",
+                "Invalid input data.",
+                details
+            );
+
+            return new ObjectResult(error)
+            {
+                StatusCode = 422
+            };
+        };
+    });
 
 // Register Users Module
 builder.Services.AddUsersModule(builder.Configuration);
@@ -75,6 +108,7 @@ builder.Services
 
 // Authorization
 builder.Services.AddAuthorization();
+
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
@@ -107,30 +141,10 @@ builder.Services.AddRateLimiter(options =>
         );
     };
 });
-// Controllers + Unified Validation Errors
-builder.Services.AddControllers()
-    .AddApplicationPart(typeof(UsersModule).Assembly)
-    .ConfigureApiBehaviorOptions(options =>
-    {
-        options.InvalidModelStateResponseFactory = context =>
-        {
-            var details = context.ModelState
-                .Where(entry => entry.Value!.Errors.Count > 0)
-                .SelectMany(entry => entry.Value!.Errors.Select(error =>
-                    $"{entry.Key}: {error.ErrorMessage}"));
 
-            var error = new ApiError(
-                "VALIDATION_ERROR",
-                "البيانات المدخلة غير صحيحة",
-                details
-            );
-
-            return new ObjectResult(error)
-            {
-                StatusCode = 422
-            };
-        };
-    });
+// Register Modules
+builder.Services.AddOrdersModule(builder.Configuration);
+builder.Services.AddNotificationsModule(builder.Configuration);
 
 // API Versioning
 builder.Services.AddApiVersioning(options =>
@@ -138,6 +152,7 @@ builder.Services.AddApiVersioning(options =>
     options.DefaultApiVersion = new ApiVersion(1, 0);
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
 }).AddMvc();
 
 // Swagger
@@ -145,6 +160,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Apply Database Migrations
+app.Services.MigrateOrdersModule();
+app.Services.MigrateNotificationsModule();
 
 // Swagger
 if (app.Environment.IsDevelopment())
@@ -157,7 +176,6 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseHttpsRedirection();
-
 
 app.UseRouting();
 
