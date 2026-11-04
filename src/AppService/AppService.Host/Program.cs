@@ -3,8 +3,20 @@ using Microsoft.AspNetCore.Mvc;
 using Shared.Errors;
 using Catalog.Module.Infrastructure;
 using Catalog.Module.Endpoints.Contoller;
+using Contracts.Warehouse;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+
+var warehouseUrl = builder.Configuration["Warehouse:Url"]
+    ?? throw new InvalidOperationException("Configuration 'Warehouse:Url' is missing.");
+
+builder.Services.AddGrpcClient<WarehouseService.WarehouseServiceClient>(options =>
+{
+    options.Address = new Uri(warehouseUrl);
+});
+
 
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(ProductsController).Assembly)
