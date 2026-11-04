@@ -28,12 +28,15 @@ namespace E.Infrastructure.config
             builder.Property(p => p.Price)
                 .HasPrecision(18, 2);
 
+            builder.HasMany(p => p.Images)
+    .WithOne(pi => pi.Product)
+    .HasForeignKey(pi => pi.ProductId)
+    .OnDelete(DeleteBehavior.Cascade);
 
-             
 
             builder.Navigation(p => p.Images)
-                   .UsePropertyAccessMode(PropertyAccessMode.Field)
-                  ;
+      .HasField("_images")
+      .UsePropertyAccessMode(PropertyAccessMode.Field);
 
         }
 

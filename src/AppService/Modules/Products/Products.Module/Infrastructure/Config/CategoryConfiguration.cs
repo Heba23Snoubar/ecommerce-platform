@@ -31,7 +31,7 @@ namespace E.Infrastructure.Config
                    .HasForeignKey(c => c.ParentId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-
+            builder.HasIndex(c => c.ParentId);
 
         }
     }

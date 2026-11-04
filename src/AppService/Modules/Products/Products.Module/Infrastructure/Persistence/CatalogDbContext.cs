@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 namespace E.Infrastructure.Persistence
 {
 
-    public class AppDbContext : DbContext
+    public class CatalogDbContext  : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options)
+        public CatalogDbContext (DbContextOptions<CatalogDbContext > options)
             : base(options)
         {
         }
@@ -18,16 +18,15 @@ namespace E.Infrastructure.Persistence
 
 
         public DbSet<ProductImage> ProductImages => Set<ProductImage>();
-
          
  
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
 
-            modelBuilder.HasDefaultSchema("Catalog");
+            modelBuilder.HasDefaultSchema("products");
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(CatalogDbContext ).Assembly);
         }
     
     }
