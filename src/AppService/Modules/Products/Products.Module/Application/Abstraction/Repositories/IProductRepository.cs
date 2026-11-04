@@ -12,6 +12,10 @@ namespace Catalog.Module.Application.Abstraction.Repositories
             Guid id,
             CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyCollection<Product>> GetByIdsAsync(
+    IReadOnlyCollection<Guid> ids,
+    CancellationToken cancellationToken = default);
+
         Task<PagedResult<ProductListDto>> GetPagedAsync(
             ProductFilter filter,
             CancellationToken cancellationToken = default);

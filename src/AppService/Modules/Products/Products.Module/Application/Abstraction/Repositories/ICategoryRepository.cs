@@ -10,6 +10,10 @@ namespace Catalog.Module.Application.Abstraction.Repositories
  
     public interface ICategoryRepository
     {
+        Task<IReadOnlyCollection<Category>> GetByIdsAsync(
+    IReadOnlyCollection<Guid> ids,
+    CancellationToken cancellationToken = default);
+
         Task<Category?> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default);

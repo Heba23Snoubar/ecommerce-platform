@@ -20,6 +20,18 @@ namespace Catalog.Module.Infrastructure.Repositories
             _context = context;
         }
 
+        public async Task<IReadOnlyCollection<Category>> GetByIdsAsync(
+    IReadOnlyCollection<Guid> ids,
+    CancellationToken cancellationToken = default)
+        {
+            if (ids.Count == 0)
+                return Array.Empty<Category>();
+
+            return await _context.Categories
+                .AsNoTracking()
+                .Where(c => ids.Contains(c.Id))
+                .ToListAsync(cancellationToken);
+        }
         public async Task<Category?> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default)

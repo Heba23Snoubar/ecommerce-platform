@@ -157,6 +157,20 @@ namespace Catalog.Module.Infrastructure.Repositories
                     "Minimum price cannot exceed maximum price.");
             }
         }
+        public async Task<IReadOnlyCollection<Product>> GetByIdsAsync(
+    IReadOnlyCollection<Guid> ids,
+    CancellationToken cancellationToken = default)
+        {
+            if (ids.Count == 0)
+                return Array.Empty<Product>();
+
+            return await _context.Products
+                .AsNoTracking()
+                .Include(p => p.Images)
+                .Where(p => ids.Contains(p.Id))
+                .ToListAsync(cancellationToken);
+        }
     }
+
 }
 

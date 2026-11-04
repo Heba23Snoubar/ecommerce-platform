@@ -11,6 +11,8 @@ using E.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Products.Contract.Category.Interfaces;
+using Products.Contract.Product.Interfaces;
 using Products.Module.Application.Services.Implementations;
 
 namespace Catalog.Module.Infrastructure
@@ -33,7 +35,6 @@ namespace Catalog.Module.Infrastructure
                 });
             });
 
-            services.AddScoped<ICategoryRepository, CategoryRepository>();
             services.AddScoped<IProductRepository, ProductRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -42,7 +43,8 @@ namespace Catalog.Module.Infrastructure
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<ICategoryRepository, CategoryRepository>();
 
-
+            services.AddScoped<IProductQueryService, ProductQueryService>();
+            services.AddScoped<ICategoryQueryService, CategoryQueryService>();
 
             return services;
         }
