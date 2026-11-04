@@ -17,5 +17,6 @@
     <ItemGroup>
     <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.1" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+    <ProjectReference Include="..\..\..\Infrastructure.Warehouse\Infrastructure.Warehouse.csproj" />
   </ItemGroup>
 </Project>
