@@ -14,7 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Modules\Users\Users.Module\Users.Module.csproj" />
     <ProjectReference Include="..\Modules\Orders\Orders.Module\Orders.Module.csproj" />
-    <ProjectReference Include="..\Modules\Products\Products.Module\Products.Module.csproj" />
+    <ProjectReference Include="..\Modules\Products\Products.Module\Catalog.Module.csproj" />
     <ProjectReference Include="..\Modules\Notifications\Notifications.Module\Notifications.Module.csproj" />
     <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
