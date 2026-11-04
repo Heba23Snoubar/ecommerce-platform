@@ -1,13 +1,15 @@
 using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 using Asp.Versioning;
+using Catalog.Module.Endpoints.Contoller;
+using Catalog.Module.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Shared.Errors;
 using Users.Module;
-using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,15 +68,16 @@ builder.Services
                 NameClaimType = ClaimTypes.Name,
                 RoleClaimType = ClaimTypes.Role,
 
-                ValidAlgorithms = new[]
-                {
+                ValidAlgorithms =
+                [
                     SecurityAlgorithms.HmacSha256
-                }
+                ]
             };
     });
 
 // Authorization
 builder.Services.AddAuthorization();
+
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
@@ -107,9 +110,11 @@ builder.Services.AddRateLimiter(options =>
         );
     };
 });
+
 // Controllers + Unified Validation Errors
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(UsersModule).Assembly)
+    .AddApplicationPart(typeof(ProductsController).Assembly)
     .ConfigureApiBehaviorOptions(options =>
     {
         options.InvalidModelStateResponseFactory = context =>
@@ -142,6 +147,7 @@ builder.Services.AddApiVersioning(options =>
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddCatalogInfrastructure(builder.Configuration);
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
@@ -157,7 +163,6 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseHttpsRedirection();
-
 
 app.UseRouting();
 
