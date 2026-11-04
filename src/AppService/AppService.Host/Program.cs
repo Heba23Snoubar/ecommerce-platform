@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
 using Catalog.Module.Endpoints.Contoller;
@@ -8,13 +9,16 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
+using Orders.Module;
 using Shared.Errors;
 using Users.Module;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register Users Module
+// Register  Module
 builder.Services.AddUsersModule(builder.Configuration);
+builder.Services.AddOrdersModule(builder.Configuration);
+builder.Services.AddCatalogInfrastructure(builder.Configuration);
 
 // JWT Configuration
 var jwtKey = builder.Configuration["JWT_KEY"]
@@ -111,10 +115,14 @@ builder.Services.AddRateLimiter(options =>
     };
 });
 
-// Controllers + Unified Validation Errors
+// Controllers + Unified Validation Errors + Enums Converter + Modules Parts
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(UsersModule).Assembly)
+    .AddApplicationPart(OrdersModule.ModuleAssembly)
     .AddApplicationPart(typeof(ProductsController).Assembly)
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()))
     .ConfigureApiBehaviorOptions(options =>
     {
         options.InvalidModelStateResponseFactory = context =>
@@ -143,6 +151,7 @@ builder.Services.AddApiVersioning(options =>
     options.DefaultApiVersion = new ApiVersion(1, 0);
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
 }).AddMvc();
 
 // Swagger
