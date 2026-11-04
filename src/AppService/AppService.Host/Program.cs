@@ -1,5 +1,15 @@
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Asp.Versioning;
+using Catalog.Module.Endpoints.Contoller;
+using Catalog.Module.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.IdentityModel.Tokens;
+using Orders.Module;
 using Shared.Errors;
 using Catalog.Module.Infrastructure;
 using Catalog.Module.Endpoints.Contoller;
@@ -11,8 +21,118 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddWarehouseInfrastructure(builder.Configuration);
 
+using Users.Module;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Register  Module
+builder.Services.AddUsersModule(builder.Configuration);
+builder.Services.AddOrdersModule(builder.Configuration);
+builder.Services.AddCatalogInfrastructure(builder.Configuration);
+
+// JWT Configuration
+var jwtKey = builder.Configuration["JWT_KEY"]
+    ?? throw new InvalidOperationException(
+        "JWT_KEY configuration is missing.");
+
+var jwtIssuer = builder.Configuration["JWT_ISSUER"]
+    ?? throw new InvalidOperationException(
+        "JWT_ISSUER configuration is missing.");
+
+var jwtAudience = builder.Configuration["JWT_AUDIENCE"]
+    ?? throw new InvalidOperationException(
+        "JWT_AUDIENCE configuration is missing.");
+
+if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
+{
+    throw new InvalidOperationException(
+        "JWT_KEY must contain at least 32 bytes.");
+}
+
+// Authentication
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+
+        options.DefaultChallengeScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = jwtIssuer,
+
+                ValidateAudience = true,
+                ValidAudience = jwtAudience,
+
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(jwtKey)),
+
+                ValidateLifetime = true,
+                RequireExpirationTime = true,
+
+                ClockSkew = TimeSpan.FromSeconds(30),
+
+                NameClaimType = ClaimTypes.Name,
+                RoleClaimType = ClaimTypes.Role,
+
+                ValidAlgorithms =
+                [
+                    SecurityAlgorithms.HmacSha256
+                ]
+            };
+    });
+
+// Authorization
+builder.Services.AddAuthorization();
+
+// Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }
+        )
+    );
+
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new ApiError(
+                "RATE_LIMIT_EXCEEDED",
+                "Too many login attempts. Please try again later."
+            ),
+            cancellationToken
+        );
+    };
+});
+
+// Controllers + Unified Validation Errors + Enums Converter + Modules Parts
 builder.Services.AddControllers()
+    .AddApplicationPart(typeof(UsersModule).Assembly)
+    .AddApplicationPart(OrdersModule.ModuleAssembly)
     .AddApplicationPart(typeof(ProductsController).Assembly)
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()))
     .ConfigureApiBehaviorOptions(options =>
     {
         options.InvalidModelStateResponseFactory = context =>
@@ -34,16 +154,14 @@ builder.Services.AddControllers()
             };
         };
     });
- 
- 
-
 
 // API Versioning
 builder.Services.AddApiVersioning(options =>
 {
-options.DefaultApiVersion = new ApiVersion(1, 0);
-options.AssumeDefaultVersionWhenUnspecified = true;
-options.ReportApiVersions = true;
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
 }).AddMvc();
 
 // Swagger
@@ -56,8 +174,8 @@ var app = builder.Build();
 // Swagger
 if (app.Environment.IsDevelopment())
 {
-app.UseSwagger();
-app.UseSwaggerUI();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 // Error Handling Middleware
@@ -65,6 +183,12 @@ app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
+app.UseRouting();
+
+app.UseRateLimiter();
+
+// Authentication must come before Authorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
