@@ -3,58 +3,62 @@ services:
   # =========================================
   # Main Application Database
   # =========================================
-
   app-db:
     image: postgres:16
-
     environment:
       POSTGRES_DB: ${APP_DB_NAME}
       POSTGRES_USER: ${APP_DB_USER}
       POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
-#عم تاخدن من env
     volumes:
       - app-db-data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-
     ports:
       - "5432:5432"
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${APP_DB_USER} -d ${APP_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-
   # =========================================
   # Warehouse Database
   # =========================================
-
   warehouse-db:
     image: postgres:16
-
     environment:
       POSTGRES_DB: ${WAREHOUSE_DB_NAME}
       POSTGRES_USER: ${WAREHOUSE_DB_USER}
       POSTGRES_PASSWORD: ${WAREHOUSE_DB_PASSWORD}
-
     volumes:
       - warehouse-db-data:/var/lib/postgresql/data
-
     ports:
       - "5433:5432"
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${WAREHOUSE_DB_USER} -d ${WAREHOUSE_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  # =========================================
+  # Warehouse gRPC Microservice
+  # =========================================
+  warehouse:
+    build:
+      context: .
+      dockerfile: src/WarehouseService/Dockerfile
+    environment:
+      - ConnectionStrings__WarehouseDb=Host=warehouse-db;Port=5432;Database=${WAREHOUSE_DB_NAME};Username=${WAREHOUSE_DB_USER};Password=${WAREHOUSE_DB_PASSWORD}
+      - Kestrel__Endpoints__Grpc__Url=http://+:8080
+      - Kestrel__Endpoints__Grpc__Protocols=Http2
+    ports:
+      - "8080:8080"
+    depends_on:
+      warehouse-db:
+        condition: service_healthy
 
 # =========================================
 # Persistent Volumes
 # =========================================
-
 volumes:
   app-db-data:
   warehouse-db-data:

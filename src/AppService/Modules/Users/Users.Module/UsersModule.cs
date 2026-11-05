@@ -1,10 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Users.Module.Authorization;
 using Users.Module.Data;
 using Users.Module.Services;
-using Microsoft.AspNetCore.Authorization;
-using Users.Module.Authorization;
+
 namespace Users.Module;
 
 public static class UsersModule
@@ -13,8 +14,6 @@ public static class UsersModule
         this IServiceCollection services,
         IConfiguration configuration)
     {
-
-
         var connectionString =
             configuration.GetConnectionString("Users");
 
@@ -39,9 +38,8 @@ public static class UsersModule
         services.AddScoped<JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddHostedService<RbacSeedHostedService>();
-        services.AddSingleton<
-    IAuthorizationPolicyProvider,
-    PermissionPolicyProvider>();
+        services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+
         return services;
     }
 }

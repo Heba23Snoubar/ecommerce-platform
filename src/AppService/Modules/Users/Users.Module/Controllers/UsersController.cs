@@ -6,6 +6,7 @@ using Users.Module.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+
 namespace Users.Module.Controllers;
 
 [ApiController]

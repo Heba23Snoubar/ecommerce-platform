@@ -14,9 +14,10 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-	</ItemGroup>
+ 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\Infrastructure.Warehouse\Infrastructure.Warehouse.csproj" />
 		<ProjectReference Include="..\Modules\Users\Users.Module\Users.Module.csproj" />
 		<ProjectReference Include="..\Modules\Orders\Orders.Module\Orders.Module.csproj" />
 		<ProjectReference Include="..\Modules\Products\Products.Module\Products.Module.csproj" />

@@ -1,18 +1,28 @@
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Asp.Versioning;
+using Catalog.Module.Endpoints.Contoller;
+using Catalog.Module.Infrastructure;
+using Infrastructure.Warehouse;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
+using Notifications.Module;
+using Orders.Module;
 using Shared.Errors;
 using Users.Module;
-using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register Users Module
+// Register Modules & Infrastructure
 builder.Services.AddUsersModule(builder.Configuration);
+builder.Services.AddOrdersModule(builder.Configuration);
+builder.Services.AddCatalogInfrastructure(builder.Configuration);
+builder.Services.AddNotificationsModule(builder.Configuration);
+builder.Services.AddWarehouseInfrastructure(builder.Configuration);
 
 // JWT Configuration
 var jwtKey = builder.Configuration["JWT_KEY"]
@@ -66,15 +76,16 @@ builder.Services
                 NameClaimType = ClaimTypes.Name,
                 RoleClaimType = ClaimTypes.Role,
 
-                ValidAlgorithms = new[]
-                {
+                ValidAlgorithms =
+                [
                     SecurityAlgorithms.HmacSha256
-                }
+                ]
             };
     });
 
 // Authorization
 builder.Services.AddAuthorization();
+
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
@@ -107,9 +118,16 @@ builder.Services.AddRateLimiter(options =>
         );
     };
 });
-// Controllers + Unified Validation Errors
+
+// Controllers + Application Parts + Validation + Enums
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(UsersModule).Assembly)
+    .AddApplicationPart(OrdersModule.ModuleAssembly)
+    .AddApplicationPart(typeof(ProductsController).Assembly)
+    .AddApplicationPart(NotificationsModuleExtensions.ModuleAssembly)
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()))
     .ConfigureApiBehaviorOptions(options =>
     {
         options.InvalidModelStateResponseFactory = context =>
@@ -138,6 +156,7 @@ builder.Services.AddApiVersioning(options =>
     options.DefaultApiVersion = new ApiVersion(1, 0);
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
 }).AddMvc();
 
 // Swagger
@@ -146,6 +165,9 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Apply Database Migrations
+app.Services.MigrateOrdersModule();
+app.Services.MigrateNotificationsModule();
 
 // HSTS - Enable only outside Development
 if (!app.Environment.IsDevelopment())
@@ -165,7 +187,6 @@ app.Use(async (context, next) =>
     headers["Permissions-Policy"] =
         "camera=(), microphone=(), geolocation=()";
 
-    // Swagger requires its own content security configuration.
     if (!context.Request.Path.StartsWithSegments(
         "/swagger",
         StringComparison.OrdinalIgnoreCase))
@@ -177,8 +198,8 @@ app.Use(async (context, next) =>
 
     await next();
 });
-    
-// Swagger
+
+// Swagger UI
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -190,12 +211,11 @@ app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
-
 app.UseRouting();
 
 app.UseRateLimiter();
 
-// Authentication must come before Authorization
+// Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 

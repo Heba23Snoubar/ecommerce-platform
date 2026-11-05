@@ -1,4 +1,3 @@
-
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -49,20 +48,20 @@ internal sealed class JwtTokenService
     }
 
     public (string AccessToken, DateTime ExpiresAtUtc) GenerateToken(
-    User user,
-    IReadOnlyCollection<string> roles,
-    IReadOnlyCollection<string> permissions)
+        User user,
+        IReadOnlyCollection<string> roles,
+        IReadOnlyCollection<string> permissions)
     {
         var now = DateTime.UtcNow;
         var expiresAt = now.AddMinutes(_expirationMinutes);
 
         var claims = new List<Claim>
-{
-    new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-    new(ClaimTypes.Name, user.FullName),
-    new(ClaimTypes.Email, user.Email),
-    new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-};
+        {
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name, user.FullName),
+            new(ClaimTypes.Email, user.Email),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
 
         foreach (var role in roles.Distinct())
         {

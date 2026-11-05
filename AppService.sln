@@ -29,7 +29,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Users.Module", "src\AppServ
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Products", "Products", "{29577601-55C9-94D2-0CB1-6596930F129F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Products.Contracts", "src\AppService\Modules\Products\Products.Contracts\Products.Contracts.csproj", "{99065A21-0A9A-4BDF-AA46-8CF3F76A8BBD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Products.Contract", "src\AppService\Modules\Products\Products.Contracts\Products.Contract.csproj", "{99065A21-0A9A-4BDF-AA46-8CF3F76A8BBD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Products.Module", "src\AppService\Modules\Products\Products.Module\Products.Module.csproj", "{D7F6E6BB-582C-4CAB-9077-09A0BDE93F49}"
 EndProject
@@ -203,5 +203,8 @@ Global
 		{D60E96AB-F493-E13F-FDAA-63202FF92575} = {CF510914-A3C9-307D-6CB9-3A18A9B39C7E}
 		{4C470356-AFC0-440C-88C5-832FD49215E1} = {D60E96AB-F493-E13F-FDAA-63202FF92575}
 		{2A31F5AA-0D59-49C2-AAEC-2C06A5C5AD50} = {D60E96AB-F493-E13F-FDAA-63202FF92575}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DC760237-BD0A-47C6-927B-2DB6A5E87A3F}
 	EndGlobalSection
 EndGlobal
