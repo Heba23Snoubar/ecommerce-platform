@@ -46,8 +46,8 @@ internal class OrdersService : IOrdersApi
         var missing = lines.Where(l => !products.ContainsKey(l.ProductId))
             .Select(l => l.ProductId).ToList();
         if (missing.Count > 0)
-            throw new AppException(422, "product_not_found", "Some products do not exist.",
-                new { productIds = missing });
+            throw new AppException(422, "product_not_found", "Some products do not exist or are not available.",
+                            new { productIds = missing });
 
         // 3) المعرّف يولَّد أولاً، وهو نفسه reservation_id في المستودع
         var orderId = Guid.NewGuid();

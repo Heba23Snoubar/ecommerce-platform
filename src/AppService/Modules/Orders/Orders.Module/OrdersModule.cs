@@ -24,8 +24,10 @@ public static class OrdersModule
 
         services.AddScoped<IOrdersApi, OrdersService>();
 
-        // المنتجات: نسخة وهمية مؤقتة حتى ربط Products.Contracts
-        services.AddSingleton<IProductCatalog, FakeProductCatalog>();
+        if (config.GetValue<bool>("Orders:UseFakeCatalog"))
+            services.AddSingleton<IProductCatalog, FakeProductCatalog>();
+        else
+            services.AddScoped<IProductCatalog, ProductCatalogAdapter>();
 
         // المستودع: الحقيقي افتراضياً، والوهمي عند Orders:UseFakeWarehouse=true
         if (config.GetValue<bool>("Orders:UseFakeWarehouse"))
