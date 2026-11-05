@@ -6,7 +6,6 @@ using Users.Module.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
-
 namespace Users.Module.Controllers;
 
 [ApiController]
@@ -59,6 +58,33 @@ public sealed class UsersController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPost("refresh")]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<AuthResponse>> Refresh(
+    [FromBody] RefreshTokenRequest request,
+    CancellationToken cancellationToken)
+    {
+        var response = await _authService.RefreshAsync(
+            request,
+            cancellationToken);
+
+        return Ok(response);
+    }
+
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Logout(
+        [FromBody] RefreshTokenRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _authService.LogoutAsync(
+            request,
+            cancellationToken);
+
+        return NoContent();
+    }
+
     [Authorize]
     [HttpGet("me")]
     public IActionResult GetCurrentUser()
@@ -87,6 +113,32 @@ public sealed class UsersController : ControllerBase
         {
             Message = "Welcome Admin!",
             Role = User.FindFirstValue(ClaimTypes.Role)
+        });
+    }
+
+
+
+
+
+
+    [Authorize(Policy = "Permission:Users.Read")]
+    [HttpGet("test/permission-read")]
+    public IActionResult TestPermissionRead()
+    {
+        return Ok(new
+        {
+            message = "Permission authorization successful.",
+            requiredPermission = "Users.Read"
+        });
+    }
+
+    [Authorize(Policy = "Permission:Users.Test")]
+    [HttpGet("test/permission-denied")]
+    public IActionResult TestPermissionDenied()
+    {
+        return Ok(new
+        {
+            message = "You have access to this endpoint."
         });
     }
 }

@@ -146,6 +146,38 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+
+// HSTS - Enable only outside Development
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
+// Security Headers Middleware
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "no-referrer";
+
+    headers["Permissions-Policy"] =
+        "camera=(), microphone=(), geolocation=()";
+
+    // Swagger requires its own content security configuration.
+    if (!context.Request.Path.StartsWithSegments(
+        "/swagger",
+        StringComparison.OrdinalIgnoreCase))
+    {
+        headers["Content-Security-Policy"] =
+            "default-src 'none'; frame-ancestors 'none'; " +
+            "base-uri 'none'; form-action 'none'";
+    }
+
+    await next();
+});
+    
 // Swagger
 if (app.Environment.IsDevelopment())
 {

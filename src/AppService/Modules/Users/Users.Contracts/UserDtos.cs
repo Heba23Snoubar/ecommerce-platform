@@ -1,5 +1,3 @@
-
-
 using System.ComponentModel.DataAnnotations;
 
 namespace Users.Contracts;
@@ -29,6 +27,11 @@ public record LoginRequest(
     string Password
 );
 
+public record RefreshTokenRequest(
+    [Required]
+    string RefreshToken
+);
+
 public record UserDto(
     Guid Id,
     string FullName,
@@ -39,5 +42,6 @@ public record UserDto(
 public record AuthResponse(
     string AccessToken,
     DateTime ExpiresAtUtc,
+    string RefreshToken,
     UserDto User
 );
