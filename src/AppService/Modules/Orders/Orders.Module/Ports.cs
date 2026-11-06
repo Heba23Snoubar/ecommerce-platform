@@ -18,3 +18,12 @@ internal interface IStockReservation
 
     Task ReleaseAsync(Guid reservationId, CancellationToken ct);
 }
+internal class WarehouseUnavailableException : Exception
+{
+    public WarehouseUnavailableException(string message, Exception? inner = null) : base(message, inner) { }
+}
+
+internal class WarehouseTimeoutException : Exception
+{
+    public WarehouseTimeoutException(string message, Exception? inner = null) : base(message, inner) { }
+}
