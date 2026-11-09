@@ -18,6 +18,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Infrastructure.Warehouse\Infrastructure.Warehouse.csproj" />
+		<ProjectReference Include="..\Modules\Carts\Carts.Module\Carts.Module.csproj" />
 		<ProjectReference Include="..\Modules\Users\Users.Module\Users.Module.csproj" />
 		<ProjectReference Include="..\Modules\Orders\Orders.Module\Orders.Module.csproj" />
 		<ProjectReference Include="..\Modules\Products\Products.Module\Products.Module.csproj" />

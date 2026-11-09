@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Orders.Contracts;
+using Orders.Module.Adapters;
 using Orders.Module.Data;
 using Orders.Module.Ports;
 using Orders.Module.Services;
@@ -23,9 +24,17 @@ public static class OrdersModule
 
         services.AddScoped<IOrdersApi, OrdersService>();
 
-        // نسخ وهمية مؤقتة، تُستبدل لاحقاً بمحوّلات إلى واجهات M3 وM1
-        services.AddSingleton<IProductCatalog, FakeProductCatalog>();
-        services.AddSingleton<IStockReservation, FakeStockReservation>();
+        if (config.GetValue<bool>("Orders:UseFakeCatalog"))
+            services.AddSingleton<IProductCatalog, FakeProductCatalog>();
+        else
+            services.AddScoped<IProductCatalog, ProductCatalogAdapter>();
+
+        // المستودع: الحقيقي افتراضياً، والوهمي عند Orders:UseFakeWarehouse=true
+        if (config.GetValue<bool>("Orders:UseFakeWarehouse"))
+            services.AddSingleton<IStockReservation, FakeStockReservation>();
+        else
+            services.AddScoped<IStockReservation, WarehouseStockReservation>();
+
         return services;
     }
 

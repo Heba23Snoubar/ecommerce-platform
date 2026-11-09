@@ -46,15 +46,33 @@ internal class OrdersService : IOrdersApi
         var missing = lines.Where(l => !products.ContainsKey(l.ProductId))
             .Select(l => l.ProductId).ToList();
         if (missing.Count > 0)
-            throw new AppException(422, "product_not_found", "Some products do not exist.",
-                new { productIds = missing });
+            throw new AppException(422, "product_not_found", "Some products do not exist or are not available.",
+                            new { productIds = missing });
 
         // 3) المعرّف يولَّد أولاً، وهو نفسه reservation_id في المستودع
         var orderId = Guid.NewGuid();
 
-        // 4) حجز الكمية (كلها أو لا شيء)
-        var reserve = await _stock.ReserveAsync(orderId,
-            lines.Select(l => (l.ProductId, l.Quantity)).ToList(), ct);
+       // 4) حجز الكمية (كلها أو لا شيء) مع معالجة توقف المستودع أو بطئه
+        ReserveResult reserve;
+        try
+        {
+            reserve = await _stock.ReserveAsync(orderId,
+                lines.Select(l => (l.ProductId, l.Quantity)).ToList(), ct);
+        }
+        catch (WarehouseUnavailableException ex)
+        {
+            _log.LogWarning(ex, "Warehouse unavailable while reserving for order {OrderId}", orderId);
+            await SafeReleaseAsync(orderId);   // قد يكون الحجز نجح ولم يصل الرد
+            throw new AppException(503, "warehouse_unavailable",
+                "The warehouse service is currently unavailable. Please try again shortly.");
+        }
+        catch (WarehouseTimeoutException ex)
+        {
+            _log.LogWarning(ex, "Warehouse timed out while reserving for order {OrderId}", orderId);
+            await SafeReleaseAsync(orderId);
+            throw new AppException(504, "warehouse_timeout",
+                "The warehouse service did not respond in time. Please try again.");
+        }
 
         if (reserve.Outcome == ReserveOutcome.InsufficientStock)
             throw new AppException(409, "insufficient_stock",
@@ -62,7 +80,6 @@ internal class OrdersService : IOrdersApi
         if (reserve.Outcome == ReserveOutcome.ProductNotFound)
             throw new AppException(422, "product_not_found",
                 reserve.Message ?? "Product not found in warehouse.", reserve.Details);
-
         // 5) حفظ الطلب، وعند الفشل نُرجع الكمية المحجوزة
         var order = new Order { Id = orderId, UserId = userId, Status = OrderStatus.Pending };
         foreach (var l in lines)

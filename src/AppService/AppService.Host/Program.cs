@@ -8,12 +8,13 @@ using Catalog.Module.Infrastructure;
 using Infrastructure.Warehouse;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Notifications.Module;
 using Orders.Module;
 using Shared.Errors;
 using Users.Module;
+using Carts.Module.Infrastructure;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,7 @@ builder.Services.AddOrdersModule(builder.Configuration);
 builder.Services.AddCatalogInfrastructure(builder.Configuration);
 builder.Services.AddNotificationsModule(builder.Configuration);
 builder.Services.AddWarehouseInfrastructure(builder.Configuration);
+builder.Services.AddCartInfrastructure(builder.Configuration);
 
 // JWT Configuration
 var jwtKey = builder.Configuration["JWT_KEY"]

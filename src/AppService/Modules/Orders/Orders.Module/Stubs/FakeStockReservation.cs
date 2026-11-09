@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Orders.Module.Ports;
 
@@ -7,12 +8,22 @@ internal class FakeStockReservation : IStockReservation
 {
     private const int StubAvailable = 100;
     private readonly ILogger<FakeStockReservation> _log;
+    private readonly string _mode;
 
-    public FakeStockReservation(ILogger<FakeStockReservation> log) => _log = log;
+    public FakeStockReservation(ILogger<FakeStockReservation> log, IConfiguration config)
+    {
+        _log = log;
+        _mode = config["Orders:FakeWarehouseMode"] ?? "ok";   // ok | unavailable | timeout
+    }
 
     public Task<ReserveResult> ReserveAsync(Guid reservationId,
         IReadOnlyList<(Guid ProductId, int Quantity)> items, CancellationToken ct)
     {
+        if (_mode == "unavailable")
+            throw new WarehouseUnavailableException("Simulated: the warehouse is down.");
+        if (_mode == "timeout")
+            throw new WarehouseTimeoutException("Simulated: the warehouse did not respond in time.");
+
         var lacking = items.Where(i => i.Quantity > StubAvailable)
             .Select(i => new { productId = i.ProductId, requested = i.Quantity, available = StubAvailable })
             .ToList();

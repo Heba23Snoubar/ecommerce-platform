@@ -144,29 +144,39 @@
 |   |   |   \-- ErrorHandlingMiddleware.cs
 |   |   \-- Shared.csproj
 |   \-- Dockerfile
-|-- WarehouseService
-|   |-- out
-|   |   |-- appsettings.Development.json
-|   |   |-- appsettings.json
-|   |   |-- Warehouse.Api.deps.json
-|   |   |-- Warehouse.Api.runtimeconfig.json
-|   |   |-- Warehouse.Api.staticwebassets.endpoints.json
-|   |   \-- web.config
-|   |-- Warehouse.Api
-|   |   |-- Data
-|   |   |   \-- WarehouseDbContext.cs
-|   |   |-- Entities
-|   |   |   |-- Reservation.cs
-|   |   |   \-- Stock.cs
-|   |   |-- Properties
-|   |   |   \-- launchSettings.json
-|   |   |-- Services
-|   |   |   \-- WarehouseGrpcService.cs
-|   |   |-- appsettings.Development.json
-|   |   |-- appsettings.json
-|   |   |-- Program.cs
-|   |   |-- Warehouse.Api.csproj
-|   |   \-- Warehouse.Api.csproj.user
-|   |-- Dockerfile
-|   \-- WarehouseService.sln
+└── WarehouseServiceJava/
+    ├── Dockerfile
+    ├── pom.xml
+    ├── .gitignore
+    └── src/
+        └── main/
+            ├── java/
+            │   └── com/
+            │       └── ecommerce/
+            │           └── warehouse/
+            │               ├── WarehouseApplication.java
+            │               │
+            │               ├── grpc/
+            │               │   └── WarehouseGrpcService.java
+            │               │
+            │               ├── entity/
+            │               │   ├── Stock.java
+            │               │   ├── Reservation.java
+            │               │   └── ReservationItem.java
+            │               │
+            │               ├── repository/
+            │               │   ├── StockRepository.java
+            │               │   └── ReservationRepository.java
+            │               │
+            │               └── service/
+            │                   ├── WarehouseStockService.java
+            │                   ├── ReserveItemCommand.java
+            │                   ├── ReserveResult.java
+            │                   └── ShortageInfo.java
+            │
+            └── resources/
+                ├── application.yml
+                └── db/
+                    └── migration/
+                        └── V1__init_warehouse.sql
 \-- project-structure.txt
