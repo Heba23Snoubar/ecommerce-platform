@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: warehouse-service
+
+  grpc:
+    server:
+      port: 8080   # نفس منفذ خدمة C#، فلا يتغير Warehouse:Url في التطبيق الأساسي
+
+  datasource:
+    # للتشغيل المحلي: قاعدة المستودع في docker-compose معروضة على 5433
+    # وفي Docker سنمرر SPRING_DATASOURCE_URL من docker-compose.yml (الخطوة 5)
+    url: jdbc:postgresql://localhost:5433/warehousedb
+    username: postgres
+    password: change_me_wh   # نفس WAREHOUSE_DB_PASSWORD في ملف .env
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate     # Flyway هو المسؤول عن الجداول؛ Hibernate يتحقق فقط أنها تطابق الـ Entities
+
+  flyway:
+    enabled: true
