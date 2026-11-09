@@ -18,6 +18,16 @@ internal interface IStockReservation
 
     Task ReleaseAsync(Guid reservationId, CancellationToken ct);
 }
+internal record CartLine(Guid ProductId, int Quantity);
+
+internal interface ICartSource
+{
+    /// عناصر سلة المستخدم (قائمة فارغة إن لم توجد سلة أو كانت فارغة)
+    Task<IReadOnlyList<CartLine>> GetItemsAsync(Guid userId, CancellationToken ct);
+
+    Task ClearAsync(Guid userId, CancellationToken ct);
+}
+
 internal class WarehouseUnavailableException : Exception
 {
     public WarehouseUnavailableException(string message, Exception? inner = null) : base(message, inner) { }

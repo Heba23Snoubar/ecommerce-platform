@@ -4,6 +4,7 @@
     <ProjectReference Include="..\Orders.Contracts\Orders.Contracts.csproj" />
     <ProjectReference Include="..\..\..\Shared\Shared.csproj" />
     <ProjectReference Include="..\..\Products\Products.Contracts\Products.Contract.csproj" />
+    <ProjectReference Include="..\..\Carts\Carts.Contract\Carts.Contract.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

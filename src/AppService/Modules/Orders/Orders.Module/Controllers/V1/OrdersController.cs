@@ -30,6 +30,19 @@ public class OrdersController : ControllerBase
         return Created($"{Request.Path}/{order.Id}", order);
     }
 
+    /// ينشئ طلباً من سلة المستخدم الحالي (بدون body) ثم يفرّغ السلة بعد نجاح الحفظ
+    [HttpPost("checkout")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> Checkout(CancellationToken ct)
+    {
+        var order = await _orders.CreateFromCartAsync(CurrentUserId, ct);
+
+        // الرابط /api/v1/orders/{id}: نحذف آخر جزء "checkout" من المسار الحالي
+        var path = Request.Path.Value!.TrimEnd('/');
+        var ordersPath = path[..path.LastIndexOf('/')];
+        return Created($"{ordersPath}/{order.Id}", order);
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
         => Ok(await _orders.GetAsync(id, CurrentUserId, User.IsInRole("Admin"), ct));
