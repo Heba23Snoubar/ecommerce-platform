@@ -40,16 +40,16 @@ services:
       retries: 10
 
   # =========================================
-  # Warehouse gRPC Microservice
+  # Warehouse gRPC Microservice (Spring Boot)
   # =========================================
   warehouse:
     build:
       context: .
-      dockerfile: src/WarehouseService/Dockerfile
+      dockerfile: src/WarehouseServiceJava/Dockerfile
     environment:
-      - ConnectionStrings__WarehouseDb=Host=warehouse-db;Port=5432;Database=${WAREHOUSE_DB_NAME};Username=${WAREHOUSE_DB_USER};Password=${WAREHOUSE_DB_PASSWORD}
-      - Kestrel__Endpoints__Grpc__Url=http://+:8080
-      - Kestrel__Endpoints__Grpc__Protocols=Http2
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://warehouse-db:5432/${WAREHOUSE_DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${WAREHOUSE_DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${WAREHOUSE_DB_PASSWORD}
     ports:
       - "8080:8080"
     depends_on:
