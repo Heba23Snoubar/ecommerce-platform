@@ -1,6 +1,8 @@
 # .NET build artifacts
 **/bin/
 **/obj/
+# Maven build output
+**/target/
 
 # Git
 .git/
