@@ -24,14 +24,16 @@ internal class OrdersService : IOrdersApi
     private readonly OrdersDbContext _db;
     private readonly IProductCatalog _catalog;
     private readonly IStockReservation _stock;
+    private readonly ICartSource _cart;
     private readonly ILogger<OrdersService> _log;
 
     public OrdersService(OrdersDbContext db, IProductCatalog catalog,
-        IStockReservation stock, ILogger<OrdersService> log)
+        IStockReservation stock, ICartSource cart, ILogger<OrdersService> log)
     {
         _db = db;
         _catalog = catalog;
         _stock = stock;
+        _cart = cart;
         _log = log;
     }
 
@@ -39,7 +41,31 @@ internal class OrdersService : IOrdersApi
     {
         // 1) تحقق من المدخلات ودمج المنتجات المكررة
         var lines = Validate(request);
+        return await CreateCoreAsync(userId, lines, ct);
+    }
 
+    public async Task<OrderDto> CreateFromCartAsync(Guid userId, CancellationToken ct)
+    {
+        // 1) سلة المستخدم الحالي فقط: userId يأتي من الـ JWT وليس من الطلب (منع IDOR)
+        var cartLines = await _cart.GetItemsAsync(userId, ct);
+        if (cartLines.Count == 0)
+            throw new AppException(422, "cart_empty", "Your cart is empty.");
+
+        // 2) نفس التحقق ونفس المسار المستعمل في الطلب العادي
+        var request = new CreateOrderRequest(
+            cartLines.Select(l => new OrderItemRequest(l.ProductId, l.Quantity)).ToList());
+        var lines = Validate(request);
+
+        // 3) حجز المستودع ثم حفظ الطلب؛ أي فشل هنا يترك السلة كما هي
+        var order = await CreateCoreAsync(userId, lines, ct);
+
+        // 4) بعد نجاح الحفظ فقط نفرّغ السلة
+        await SafeClearCartAsync(userId);
+        return order;
+    }
+
+    private async Task<OrderDto> CreateCoreAsync(Guid userId, List<OrderItemRequest> lines, CancellationToken ct)
+    {
         // 2) تأكد أن المنتجات موجودة واحصل على الاسم والسعر
         var products = (await _catalog.GetByIdsAsync(lines.Select(l => l.ProductId), ct))
             .ToDictionary(p => p.Id);
@@ -187,6 +213,13 @@ internal class OrdersService : IOrdersApi
             await SafeReleaseAsync(id);   // إرجاع الكمية المحجوزة
 
         return await GetAsync(id, Guid.Empty, true, ct);
+    }
+
+    private async Task SafeClearCartAsync(Guid userId)
+    {
+        // الطلب حُفظ فعلاً، فلا يجوز أن يفشل بسبب تفريغ السلة؛ نسجّل الخطأ فقط
+        try { await _cart.ClearAsync(userId, CancellationToken.None); }
+        catch (Exception ex) { _log.LogError(ex, "Order saved but clearing the cart of user {UserId} failed", userId); }
     }
 
     private async Task SafeReleaseAsync(Guid orderId)

@@ -80,7 +80,8 @@ namespace Catalog.Module.Application.Services.Implementations
 
             if (product is null)
                 return ServiceResult<ProductDetailsDto>.Failure(
-                    "Product does not exist.");
+                    "Product does not exist.",
+                    ServiceErrorType.NotFound);
 
             var result = new ProductDetailsDto(
                 product.Id,
