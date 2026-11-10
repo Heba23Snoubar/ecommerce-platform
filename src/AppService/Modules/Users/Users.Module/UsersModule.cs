@@ -36,10 +36,21 @@ public static class UsersModule
 
         services.AddScoped<PasswordService>();
         services.AddScoped<JwtTokenService>();
+        services.AddScoped<AdminManagementService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddHostedService<RbacSeedHostedService>();
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 
         return services;
+    }
+
+    public static void MigrateUsersModule(
+        this IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+
+        scope.ServiceProvider
+            .GetRequiredService<UsersDbContext>()
+            .Database.Migrate();
     }
 }

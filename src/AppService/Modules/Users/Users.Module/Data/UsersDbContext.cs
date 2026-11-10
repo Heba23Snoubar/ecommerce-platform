@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Users.Module.Data;
 
-internal sealed class UsersDbContext : DbContext
+public sealed class UsersDbContext : DbContext
 {
     public UsersDbContext(DbContextOptions<UsersDbContext> options)
         : base(options)

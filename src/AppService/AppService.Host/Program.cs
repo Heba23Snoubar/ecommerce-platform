@@ -168,6 +168,7 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Apply Database Migrations
+app.Services.MigrateUsersModule();
 app.Services.MigrateOrdersModule();
 app.Services.MigrateNotificationsModule();
 
