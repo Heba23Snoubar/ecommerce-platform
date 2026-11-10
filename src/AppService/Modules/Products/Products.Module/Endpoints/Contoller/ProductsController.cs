@@ -2,6 +2,9 @@
 using Catalog.Module.Application.DTOs.Products;
 using Catalog.Module.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Catalog.Module.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+using Shared.HttpCaching;
  
 
 
@@ -37,7 +40,7 @@ namespace Catalog.Module.Endpoints.Contoller
                 new { id = result.Data, version = "1.0" },
                 new { id = result.Data });
         }
-
+        [ETag]
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(
             Guid id,
@@ -54,7 +57,7 @@ namespace Catalog.Module.Endpoints.Contoller
 
             return Ok(result.Data);
         }
-
+        [ETag]
         [HttpGet]
         public async Task<IActionResult> GetPaged(
             [FromQuery] ProductFilter filter,
