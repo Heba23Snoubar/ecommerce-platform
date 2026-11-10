@@ -35,6 +35,8 @@ public static class OrdersModule
         else
             services.AddScoped<IStockReservation, WarehouseStockReservation>();
 
+        services.AddScoped<ICartSource, CartSourceAdapter>();
+
         return services;
     }
 
