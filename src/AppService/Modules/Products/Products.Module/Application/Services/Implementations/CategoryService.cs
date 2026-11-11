@@ -1,29 +1,30 @@
-﻿
-
-using Catalog.Module.Application.Abstraction.Interfaces;
+﻿using Catalog.Module.Application.Abstraction.Interfaces;
 using Catalog.Module.Application.Abstraction.Repositories;
 using Catalog.Module.Application.Common.Results;
 using Catalog.Module.Application.Services.Interfaces;
 using E.Domain.Entities;
+using Microsoft.Extensions.Logging;
 using Products.Module.Application.DTOs.Categories;
-using Products.Module.Application.Services;
+
 namespace Products.Module.Application.Services.Implementations
 {
-
-
-
-
     public class CategoryService : ICategoryService
     {
         private readonly ICategoryRepository _categoryRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IProductCache _cache;
+        private readonly ILogger<CategoryService> _logger;
 
         public CategoryService(
             ICategoryRepository categoryRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IProductCache cache,
+            ILogger<CategoryService> logger)
         {
             _categoryRepository = categoryRepository;
             _unitOfWork = unitOfWork;
+            _cache = cache;
+            _logger = logger;
         }
 
         public async Task<ServiceResult<CategoryDto>> CreateAsync(
@@ -66,6 +67,17 @@ namespace Products.Module.Application.Services.Implementations
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            // Invalidate categories cache after write without failing write operation
+            try
+            {
+                _logger.LogInformation("[CACHE-ACTION] Category created ({Name}). Invalidating categories cache.", name);
+                await _cache.InvalidateCategoriesAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Cache invalidation failed after creating category ({Name}). Write operation succeeded.", name);
+            }
+
             return ServiceResult<CategoryDto>.Success(MapToDto(category));
         }
 
@@ -88,12 +100,23 @@ namespace Products.Module.Application.Services.Implementations
         public async Task<ServiceResult<IReadOnlyList<CategoryDto>>> GetAllAsync(
             CancellationToken cancellationToken = default)
         {
+            // 1. Try Cache (TTL: 10 minutes)
+            var cached = await _cache.GetCategoriesAsync(cancellationToken);
+            if (cached is not null)
+            {
+                return ServiceResult<IReadOnlyList<CategoryDto>>.Success(cached);
+            }
+
+            // 2. Read from Database
             var categories = await _categoryRepository.GetAllAsync(
                 cancellationToken);
 
             var result = categories
                 .Select(MapToDto)
                 .ToList();
+
+            // 3. Fill Cache
+            await _cache.SetCategoriesAsync(result, cancellationToken);
 
             return ServiceResult<IReadOnlyList<CategoryDto>>.Success(result);
         }
@@ -157,6 +180,17 @@ namespace Products.Module.Application.Services.Implementations
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            // Invalidate categories cache after write without failing write operation
+            try
+            {
+                _logger.LogInformation("[CACHE-ACTION] Category updated ({CategoryId}). Invalidating categories cache.", id);
+                await _cache.InvalidateCategoriesAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Cache invalidation failed after updating category ({CategoryId}). Write operation succeeded.", id);
+            }
+
             return ServiceResult<CategoryDto>.Success(MapToDto(category));
         }
 
@@ -194,6 +228,17 @@ namespace Products.Module.Application.Services.Implementations
             _categoryRepository.Remove(category);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Invalidate categories cache after write without failing write operation
+            try
+            {
+                _logger.LogInformation("[CACHE-ACTION] Category deleted ({CategoryId}). Invalidating categories cache.", id);
+                await _cache.InvalidateCategoriesAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Cache invalidation failed after deleting category ({CategoryId}). Write operation succeeded.", id);
+            }
 
             return ServiceResult.Success();
         }
