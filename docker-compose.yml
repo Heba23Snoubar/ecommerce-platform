@@ -1,7 +1,7 @@
 services:
 
   # =========================================
-  # Main Application Database
+  # Main Application Database (Primary - Write)
   # =========================================
   app-db:
     image: postgres:16
@@ -9,11 +9,54 @@ services:
       POSTGRES_DB: ${APP_DB_NAME}
       POSTGRES_USER: ${APP_DB_USER}
       POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=replica"
+      - "-c"
+      - "max_wal_senders=10"
+      - "-c"
+      - "max_replication_slots=10"
+      - "-c"
+      - "hot_standby=on"
     volumes:
       - app-db-data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${APP_DB_USER} -d ${APP_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # =========================================
+  # Read Replica Database (Standby - Read Only)
+  # =========================================
+  app-db-replica:
+    image: postgres:16
+    environment:
+      PGUSER: replicator
+      PGPASSWORD: ${REPLICATOR_PASSWORD:-replicator_pw}
+    command: |
+      bash -c "
+      if [ ! -s /var/lib/postgresql/data/PG_VERSION ]; then
+        echo 'Waiting for primary database to be ready...'
+        until pg_isready -h app-db -p 5432 -U ${APP_DB_USER}; do sleep 2; done
+        echo 'Cloning primary database via pg_basebackup...'
+        rm -rf /var/lib/postgresql/data/*
+        pg_basebackup -h app-db -D /var/lib/postgresql/data -U replicator -v -P -R -X stream
+      fi
+      exec docker-entrypoint.sh postgres -c hot_standby=on
+      "
+    volumes:
+      - app-db-replica-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    depends_on:
+      app-db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${APP_DB_USER} -d ${APP_DB_NAME}"]
       interval: 5s
@@ -61,4 +104,5 @@ services:
 # =========================================
 volumes:
   app-db-data:
+  app-db-replica-data:
   warehouse-db-data:
