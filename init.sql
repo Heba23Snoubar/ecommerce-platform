@@ -39,3 +39,18 @@ ALTER ROLE cart_role SET search_path TO cart;
 -- 5. Restrict access to the default public schema
 -- =========================================
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
+
+
+-- =========================================
+-- Setup Replication for Read Replica
+-- =========================================
+
+-- 1. إنشاء مستخدم النسخ (Replication User)
+CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'replicator_pw';
+
+-- 2. إضافة صلاحية اتصال حاوية الـ Replica داخل ملف pg_hba.conf تلقائياً
+COPY (SELECT 'host replication replicator 0.0.0.0/0 scram-sha-256') 
+TO PROGRAM 'cat >> /var/lib/postgresql/data/pg_hba.conf';
+
+-- 3. إعادة تحميل إعدادات PostgreSQL لتفعيل السطر الجديد فوراً
+SELECT pg_reload_conf();

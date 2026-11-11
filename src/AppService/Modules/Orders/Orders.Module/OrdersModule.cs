@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,29 +7,30 @@ using Orders.Module.Data;
 using Orders.Module.Ports;
 using Orders.Module.Services;
 using Orders.Module.Stubs;
+using Shared.Database;
+using System.Reflection;
 
 namespace Orders.Module;
 
 public static class OrdersModule
 {
-    /// الـ Assembly الذي يحوي Controllers الوحدة، يستعمله Host في AddApplicationPart
     public static Assembly ModuleAssembly => typeof(OrdersModule).Assembly;
 
-    public static IServiceCollection AddOrdersModule(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddOrdersModule(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<OrdersDbContext>(o => o.UseNpgsql(
-            config.GetConnectionString("Orders"),
-            n => n.MigrationsHistoryTable("__EFMigrationsHistory", "orders")));
+        services.AddModulePostgresDbContext<OrdersDbContext>(configuration, "Orders", "orders");
+
+
 
         services.AddScoped<IOrdersApi, OrdersService>();
 
-        if (config.GetValue<bool>("Orders:UseFakeCatalog"))
+        if (configuration.GetValue<bool>("Orders:UseFakeCatalog"))
             services.AddSingleton<IProductCatalog, FakeProductCatalog>();
         else
             services.AddScoped<IProductCatalog, ProductCatalogAdapter>();
 
         // المستودع: الحقيقي افتراضياً، والوهمي عند Orders:UseFakeWarehouse=true
-        if (config.GetValue<bool>("Orders:UseFakeWarehouse"))
+        if (configuration.GetValue<bool>("Orders:UseFakeWarehouse"))
             services.AddSingleton<IStockReservation, FakeStockReservation>();
         else
             services.AddScoped<IStockReservation, WarehouseStockReservation>();

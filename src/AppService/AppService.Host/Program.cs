@@ -1,8 +1,5 @@
-using System.Security.Claims;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.RateLimiting;
 using Asp.Versioning;
+using Carts.Module.Infrastructure;
 using Catalog.Module.Endpoints.Contoller;
 using Catalog.Module.Infrastructure;
 using Infrastructure.Warehouse;
@@ -11,9 +8,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Notifications.Module;
 using Orders.Module;
+using Shared.Database;
 using Shared.Errors;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Users.Module;
-using Carts.Module.Infrastructure;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +26,13 @@ builder.Services.AddCatalogInfrastructure(builder.Configuration);
 builder.Services.AddNotificationsModule(builder.Configuration);
 builder.Services.AddWarehouseInfrastructure(builder.Configuration);
 builder.Services.AddCartInfrastructure(builder.Configuration);
+
+
+
+
+builder.Services.AddDatabaseReplicaRouting();   
+
+
 
 // JWT Configuration
 var jwtKey = builder.Configuration["JWT_KEY"]
@@ -218,9 +226,11 @@ app.UseRouting();
 
 app.UseRateLimiter();
 
-// Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
+
+
+app.UseReadYourOwnWritesRouting();
 
 app.MapControllers();
 
