@@ -10,7 +10,8 @@ using Catalog.Module.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
- 
+using Shared.Database;
+
 namespace Carts.Module.Infrastructure
 {
      
@@ -21,15 +22,8 @@ namespace Carts.Module.Infrastructure
             this IServiceCollection services,
             IConfiguration configuration)
         {
-         
-            services.AddDbContext<CartDbContext>(options =>
-            {
-                options.UseNpgsql(configuration.GetConnectionString("CartDb"), npgsqlOptions =>
-                {
-                   
-                    npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "cart");
-                });
-            });
+
+            services.AddModulePostgresDbContext<CartDbContext>(configuration, "CartDb", "cart");
 
             services.AddScoped<ICartRepository, CartRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();

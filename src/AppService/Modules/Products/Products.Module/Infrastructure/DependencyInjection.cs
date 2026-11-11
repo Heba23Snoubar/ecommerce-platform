@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Products.Contract.Category.Interfaces;
 using Products.Contract.Product.Interfaces;
 using Products.Module.Application.Services.Implementations;
+using Shared.Database;
 
 namespace Catalog.Module.Infrastructure
 {
@@ -25,15 +26,12 @@ namespace Catalog.Module.Infrastructure
             this IServiceCollection services,
             IConfiguration configuration)
         {
-         
-            services.AddDbContext<CatalogDbContext>(options =>
-            {
-                options.UseNpgsql(configuration.GetConnectionString("CatalogDb"), npgsqlOptions =>
-                {
-                   
-                    npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "products");
-                });
-            });
+
+
+            services.AddModulePostgresDbContext<CatalogDbContext>(configuration, "CatalogDb", "products");
+
+
+
 
             services.AddScoped<IProductRepository, ProductRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();

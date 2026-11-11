@@ -16,13 +16,19 @@ namespace E.Infrastructure.config
 
             builder.Property(p => p.Name)
                 .IsRequired()
-                .HasMaxLength(100);
+                .HasMaxLength(100)
+                ;
+             
+            builder.HasIndex(p => p.Name)
+                .IsUnique()
+                ;
 
             builder.HasOne(p => p.Category)
                    .WithMany()
                    .HasForeignKey(p => p.CategoryId)
                    .OnDelete(DeleteBehavior.Restrict)
                    ;
+             
              
 
             builder.Property(p => p.Price)

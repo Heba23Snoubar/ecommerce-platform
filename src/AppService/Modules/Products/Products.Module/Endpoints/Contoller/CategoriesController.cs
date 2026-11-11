@@ -11,6 +11,7 @@ namespace Catalog.Module.Endpoints.Contoller
     [ApiController]
     [ApiVersion(1.0)]
     [Route("api/v{version:apiVersion}/categories")]
+
     public class CategoriesController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
