@@ -1,0 +1,267 @@
+{
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "setup": {
+                "name": "setup",
+                "path": "::setup",
+                "id": "5c0f8025f7e0b6654089e5b00e950f1a",
+                "groups": {},
+                "checks": {
+                        "setup product exists": {
+                            "path": "::setup::setup product exists",
+                            "id": "b6c012c1bbae0ab609faa6d13a4c1ea5",
+                            "passes": 1,
+                            "fails": 0,
+                            "name": "setup product exists"
+                        }
+                    }
+            }
+        },
+        "checks": {
+            "S7 list returns 200": {
+                "name": "S7 list returns 200",
+                "path": "::S7 list returns 200",
+                "id": "015bcee92b17a36f3aed189e7b8f8c16",
+                "passes": 10,
+                "fails": 0
+            },
+            "S4 query returns 200": {
+                "id": "a0e98e60b467e3b584a4e115c45a475d",
+                "passes": 10,
+                "fails": 0,
+                "name": "S4 query returns 200",
+                "path": "::S4 query returns 200"
+            },
+            "S2 details return 200": {
+                "passes": 10,
+                "fails": 0,
+                "name": "S2 details return 200",
+                "path": "::S2 details return 200",
+                "id": "1979520a904b1e06f2f18cf4bb7a9a67"
+            },
+            "S4 query has ETag": {
+                "name": "S4 query has ETag",
+                "path": "::S4 query has ETag",
+                "id": "074b2b8d237d144d99b3b945b4746cbd",
+                "passes": 10,
+                "fails": 0
+            },
+            "S2 details have body": {
+                "name": "S2 details have body",
+                "path": "::S2 details have body",
+                "id": "f96d242d528e1943f272c3d6d941a0e7",
+                "passes": 10,
+                "fails": 0
+            },
+            "S2 details have ETag": {
+                "name": "S2 details have ETag",
+                "path": "::S2 details have ETag",
+                "id": "44e5e906d019af86a54a4b0e6de2683e",
+                "passes": 10,
+                "fails": 0
+            },
+            "S6 unknown product returns 404": {
+                "id": "3e5be5f95b7c37e27c19b6417127305e",
+                "passes": 10,
+                "fails": 0,
+                "name": "S6 unknown product returns 404",
+                "path": "::S6 unknown product returns 404"
+            },
+            "S6 error has no ETag": {
+                "fails": 0,
+                "name": "S6 error has no ETag",
+                "path": "::S6 error has no ETag",
+                "id": "84a53d020974e8bc4ef25d649500c9b2",
+                "passes": 10
+            },
+            "S1 list returns 200": {
+                "fails": 0,
+                "name": "S1 list returns 200",
+                "path": "::S1 list returns 200",
+                "id": "506f764d71440222e6faee63037db6c0",
+                "passes": 10
+            },
+            "S1 list has ETag": {
+                "id": "1bba222866f56c9912bdd5d30fea69e7",
+                "passes": 10,
+                "fails": 0,
+                "name": "S1 list has ETag",
+                "path": "::S1 list has ETag"
+            },
+            "S3 matching ETag returns 304": {
+                "name": "S3 matching ETag returns 304",
+                "path": "::S3 matching ETag returns 304",
+                "id": "01b0e8babc27f73401b2c2441e527b1a",
+                "passes": 10,
+                "fails": 0
+            },
+            "S3 304 has empty body": {
+                "name": "S3 304 has empty body",
+                "path": "::S3 304 has empty body",
+                "id": "ee9f441d3cd6627bea35de47a76c1987",
+                "passes": 10,
+                "fails": 0
+            },
+            "S7 details return 200": {
+                "path": "::S7 details return 200",
+                "id": "a0c50473089bae7d2de12d798d893fcc",
+                "passes": 10,
+                "fails": 0,
+                "name": "S7 details return 200"
+            },
+            "S5 price update returns 204": {
+                "passes": 10,
+                "fails": 0,
+                "name": "S5 price update returns 204",
+                "path": "::S5 price update returns 204",
+                "id": "d110437a9f58f45a4ebd177218559965"
+            },
+            "S7 cached details return 304": {
+                "name": "S7 cached details return 304",
+                "path": "::S7 cached details return 304",
+                "id": "ecada0844850b9896a71f780a354ef6c",
+                "passes": 10,
+                "fails": 0
+            },
+            "S5 updated price is immediately visible": {
+                "path": "::S5 updated price is immediately visible",
+                "id": "fb44039a940a617a69ef929e4d1154e1",
+                "passes": 10,
+                "fails": 0,
+                "name": "S5 updated price is immediately visible"
+            },
+            "S5 price restore returns 204": {
+                "passes": 10,
+                "fails": 0,
+                "name": "S5 price restore returns 204",
+                "path": "::S5 price restore returns 204",
+                "id": "61829121c0445e184ff5a79a4dd49141"
+            }
+        }
+    },
+    "metrics": {
+        "data_received": {
+            "count": 122654,
+            "rate": 11468.97574455724
+        },
+        "iteration_duration": {
+            "min": 1003.8645,
+            "med": 1014.2997,
+            "p(90)": 1057.88514,
+            "p(95)": 1073.6869450000002,
+            "p(99)": 1134.9339780000003,
+            "max": 1175.7225
+        },
+        "vus": {
+            "value": 7,
+            "min": 7,
+            "max": 7
+        },
+        "iterations": {
+            "count": 70,
+            "rate": 6.545471832300674
+        },
+        "http_req_duration{expected_response:true}": {
+            "med": 8.544,
+            "p(90)": 28.7681,
+            "p(95)": 32.547,
+            "p(99)": 49.06199999999998,
+            "max": 108.3692,
+            "min": 2.9997
+        },
+        "http_req_connecting": {
+            "p(90)": 0,
+            "p(95)": 0.7284,
+            "p(99)": 1.9324599999999994,
+            "max": 2.2498,
+            "min": 0,
+            "med": 0
+        },
+        "http_req_receiving": {
+            "p(99)": 1.2580399999999998,
+            "max": 1.7408,
+            "min": 0,
+            "med": 0.1745,
+            "p(90)": 0.9965,
+            "p(95)": 1.0289
+        },
+        "http_reqs": {
+            "count": 121,
+            "rate": 11.314315595834021
+        },
+        "http_req_sending": {
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0.5252,
+            "p(99)": 0.9047399999999988,
+            "max": 1.9994,
+            "min": 0
+        },
+        "checks": {
+            "passes": 171,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.95": false
+            },
+            "value": 1
+        },
+        "data_sent": {
+            "count": 112744,
+            "rate": 10542.323946584387
+        },
+        "http_req_blocked": {
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0.7284,
+            "p(99)": 6.253179999999986,
+            "max": 21.0005
+        },
+        "http_req_duration": {
+            "min": 2.9997,
+            "med": 8.544,
+            "p(90)": 28.7681,
+            "p(95)": 32.547,
+            "p(99)": 49.06199999999998,
+            "max": 108.3692,
+            "thresholds": {
+                "p(95)<1000": false
+            }
+        },
+        "vus_max": {
+            "value": 7,
+            "min": 7,
+            "max": 7
+        },
+        "http_req_tls_handshaking": {
+            "p(95)": 0,
+            "p(99)": 0,
+            "max": 0,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0
+        },
+        "http_req_waiting": {
+            "med": 8.2243,
+            "p(90)": 27.4608,
+            "p(95)": 32.547,
+            "p(99)": 49.06199999999998,
+            "max": 107.5194,
+            "min": 2.524
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 121,
+            "thresholds": {
+                "rate<0.05": false
+            },
+            "value": 0
+        }
+    },
+    "setup_data": {
+        "originalPrice": 79.99
+    }
+}

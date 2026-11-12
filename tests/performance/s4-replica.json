@@ -1,0 +1,269 @@
+{
+    "metrics": {
+        "http_req_blocked": {
+            "p(99)": 4.420439999999996,
+            "max": 23.385,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 1.201
+        },
+        "http_req_duration{expected_response:true}": {
+            "min": 3.4606,
+            "med": 9.5179,
+            "p(90)": 46.7985,
+            "p(95)": 259.7681,
+            "p(99)": 472.5426599999998,
+            "max": 491.2635
+        },
+        "checks": {
+            "passes": 171,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.95": false
+            },
+            "value": 1
+        },
+        "http_req_duration": {
+            "med": 9.5179,
+            "p(90)": 46.7985,
+            "p(95)": 259.7681,
+            "p(99)": 472.5426599999998,
+            "max": 491.2635,
+            "min": 3.4606,
+            "thresholds": {
+                "p(95)<1000": false
+            }
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 121,
+            "thresholds": {
+                "rate<0.05": false
+            },
+            "value": 0
+        },
+        "data_sent": {
+            "count": 112732,
+            "rate": 10233.53097051078
+        },
+        "iterations": {
+            "count": 70,
+            "rate": 6.3544261428498965
+        },
+        "http_reqs": {
+            "count": 121,
+            "rate": 10.984079475497678
+        },
+        "http_req_connecting": {
+            "p(95)": 1.0735,
+            "p(99)": 2.984459999999997,
+            "max": 3.1902,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0
+        },
+        "vus_max": {
+            "value": 7,
+            "min": 7,
+            "max": 7
+        },
+        "http_req_sending": {
+            "p(99)": 0.6115799999999997,
+            "max": 1.0033,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0.5244
+        },
+        "http_req_receiving": {
+            "med": 0,
+            "p(90)": 0.9976,
+            "p(95)": 1.0004,
+            "p(99)": 1.01576,
+            "max": 1.9732,
+            "min": 0
+        },
+        "vus": {
+            "min": 1,
+            "max": 7,
+            "value": 1
+        },
+        "iteration_duration": {
+            "max": 1492.1242,
+            "min": 1004.2886,
+            "med": 1018.6451,
+            "p(90)": 1214.1993800000002,
+            "p(95)": 1381.15169,
+            "p(99)": 1489.756051
+        },
+        "http_req_tls_handshaking": {
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "p(99)": 0,
+            "max": 0
+        },
+        "http_req_waiting": {
+            "p(90)": 46.7985,
+            "p(95)": 259.7681,
+            "p(99)": 472.5426599999998,
+            "max": 491.2635,
+            "min": 3.0039,
+            "med": 9.0003
+        },
+        "data_received": {
+            "count": 141463,
+            "rate": 12841.659792085355
+        }
+    },
+    "setup_data": {
+        "originalPrice": 79.99,
+        "productId": "01a1a8fd-ccd4-74cb-b9d1-524795bd1a20",
+        "updateProductId": "01a1a945-1642-7353-b278-51f144a9fdda"
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "setup": {
+                "name": "setup",
+                "path": "::setup",
+                "id": "5c0f8025f7e0b6654089e5b00e950f1a",
+                "groups": {},
+                "checks": {
+                        "setup products fetched successfully": {
+                            "name": "setup products fetched successfully",
+                            "path": "::setup::setup products fetched successfully",
+                            "id": "663a85b7cf93fa2bff769739cfec0573",
+                            "passes": 1,
+                            "fails": 0
+                        }
+                    }
+            }
+        },
+        "checks": {
+            "S1 list returns 200": {
+                "fails": 0,
+                "name": "S1 list returns 200",
+                "path": "::S1 list returns 200",
+                "id": "506f764d71440222e6faee63037db6c0",
+                "passes": 10
+            },
+            "S1 list has ETag": {
+                "name": "S1 list has ETag",
+                "path": "::S1 list has ETag",
+                "id": "1bba222866f56c9912bdd5d30fea69e7",
+                "passes": 10,
+                "fails": 0
+            },
+            "S7 list returns 200": {
+                "name": "S7 list returns 200",
+                "path": "::S7 list returns 200",
+                "id": "015bcee92b17a36f3aed189e7b8f8c16",
+                "passes": 10,
+                "fails": 0
+            },
+            "S4 query returns 200": {
+                "fails": 0,
+                "name": "S4 query returns 200",
+                "path": "::S4 query returns 200",
+                "id": "a0e98e60b467e3b584a4e115c45a475d",
+                "passes": 10
+            },
+            "S4 query has ETag": {
+                "path": "::S4 query has ETag",
+                "id": "074b2b8d237d144d99b3b945b4746cbd",
+                "passes": 10,
+                "fails": 0,
+                "name": "S4 query has ETag"
+            },
+            "S5 price update returns 204": {
+                "path": "::S5 price update returns 204",
+                "id": "d110437a9f58f45a4ebd177218559965",
+                "passes": 10,
+                "fails": 0,
+                "name": "S5 price update returns 204"
+            },
+            "S6 unknown product returns 404": {
+                "passes": 10,
+                "fails": 0,
+                "name": "S6 unknown product returns 404",
+                "path": "::S6 unknown product returns 404",
+                "id": "3e5be5f95b7c37e27c19b6417127305e"
+            },
+            "S6 error has no ETag": {
+                "name": "S6 error has no ETag",
+                "path": "::S6 error has no ETag",
+                "id": "84a53d020974e8bc4ef25d649500c9b2",
+                "passes": 10,
+                "fails": 0
+            },
+            "S7 details return 200": {
+                "fails": 0,
+                "name": "S7 details return 200",
+                "path": "::S7 details return 200",
+                "id": "a0c50473089bae7d2de12d798d893fcc",
+                "passes": 10
+            },
+            "S2 details return 200": {
+                "name": "S2 details return 200",
+                "path": "::S2 details return 200",
+                "id": "1979520a904b1e06f2f18cf4bb7a9a67",
+                "passes": 10,
+                "fails": 0
+            },
+            "S2 details have body": {
+                "name": "S2 details have body",
+                "path": "::S2 details have body",
+                "id": "f96d242d528e1943f272c3d6d941a0e7",
+                "passes": 10,
+                "fails": 0
+            },
+            "S2 details have ETag": {
+                "path": "::S2 details have ETag",
+                "id": "44e5e906d019af86a54a4b0e6de2683e",
+                "passes": 10,
+                "fails": 0,
+                "name": "S2 details have ETag"
+            },
+            "S3 matching ETag returns 304": {
+                "fails": 0,
+                "name": "S3 matching ETag returns 304",
+                "path": "::S3 matching ETag returns 304",
+                "id": "01b0e8babc27f73401b2c2441e527b1a",
+                "passes": 10
+            },
+            "S3 304 has empty body": {
+                "id": "ee9f441d3cd6627bea35de47a76c1987",
+                "passes": 10,
+                "fails": 0,
+                "name": "S3 304 has empty body",
+                "path": "::S3 304 has empty body"
+            },
+            "S7 cached details return 304": {
+                "fails": 0,
+                "name": "S7 cached details return 304",
+                "path": "::S7 cached details return 304",
+                "id": "ecada0844850b9896a71f780a354ef6c",
+                "passes": 10
+            },
+            "S5 updated price is immediately visible": {
+                "name": "S5 updated price is immediately visible",
+                "path": "::S5 updated price is immediately visible",
+                "id": "fb44039a940a617a69ef929e4d1154e1",
+                "passes": 10,
+                "fails": 0
+            },
+            "S5 price restore returns 204": {
+                "name": "S5 price restore returns 204",
+                "path": "::S5 price restore returns 204",
+                "id": "61829121c0445e184ff5a79a4dd49141",
+                "passes": 10,
+                "fails": 0
+            }
+        }
+    }
+}
