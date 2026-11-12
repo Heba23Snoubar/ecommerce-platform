@@ -2,8 +2,6 @@
 using Catalog.Module.Application.DTOs.Products;
 using Catalog.Module.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Catalog.Module.Application.Services.Interfaces;
-using Microsoft.AspNetCore.Mvc;
 using Shared.HttpCaching;
  
 
