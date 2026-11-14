@@ -98,7 +98,21 @@ services:
     depends_on:
       warehouse-db:
         condition: service_healthy
-
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 # =========================================
 # Persistent Volumes
 # =========================================
@@ -106,3 +120,4 @@ volumes:
   app-db-data:
   app-db-replica-data:
   warehouse-db-data:
+  rabbitmq-data:
