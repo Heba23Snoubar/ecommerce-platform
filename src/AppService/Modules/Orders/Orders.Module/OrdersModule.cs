@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Orders.Contracts;
 using Orders.Module.Adapters;
 using Orders.Module.Data;
+using Orders.Module.Messaging;
 using Orders.Module.Ports;
 using Orders.Module.Services;
 using Orders.Module.Stubs;
@@ -36,6 +37,7 @@ public static class OrdersModule
             services.AddScoped<IStockReservation, WarehouseStockReservation>();
 
         services.AddScoped<ICartSource, CartSourceAdapter>();
+        services.AddHostedService<RabbitTopologyInitializer>();
 
         return services;
     }
