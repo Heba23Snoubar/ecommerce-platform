@@ -44,3 +44,10 @@ internal interface IOrderEventPublisher
    
     Task PublishOrderCreatedAsync(OrderCreatedMessage message, CancellationToken ct);
 }
+
+internal record CustomerContact(string Name, string Email);
+
+internal interface ICustomerContact
+{
+    CustomerContact? GetCurrent();
+}

@@ -11,7 +11,7 @@ internal class OrdersService : IOrdersApi
 {
     private const int MaxLines = 50;
     private const int MaxQuantityPerLine = 1000;
-
+    private readonly ICustomerContact _contact;
     private static readonly Dictionary<OrderStatus, OrderStatus[]> Transitions = new()
     {
         [OrderStatus.Pending]   = new[] { OrderStatus.Confirmed, OrderStatus.Cancelled },
@@ -28,12 +28,13 @@ internal class OrdersService : IOrdersApi
     private readonly ILogger<OrdersService> _log;
 
     public OrdersService(OrdersDbContext db, IProductCatalog catalog,
-        IStockReservation stock, ICartSource cart, ILogger<OrdersService> log)
+        IStockReservation stock, ICartSource cart,ICustomerContact contact, ILogger<OrdersService> log)
     {
         _db = db;
         _catalog = catalog;
         _stock = stock;
         _cart = cart;
+        _contact = contact;
         _log = log;
     }
 
@@ -134,7 +135,8 @@ internal class OrdersService : IOrdersApi
             await SafeReleaseAsync(orderId);
             throw;
         }
-
+      _log.LogInformation("Order {OrderId}: customer contact resolved = {Resolved}",
+       orderId, _contact.GetCurrent() is not null);
         return ToDto(order);
     }
 
