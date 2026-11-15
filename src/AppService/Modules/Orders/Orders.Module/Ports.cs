@@ -1,3 +1,4 @@
+using Orders.Module.Messaging;
 namespace Orders.Module.Ports;
 
 internal record ProductInfo(Guid Id, string Name, decimal Price);
@@ -36,4 +37,10 @@ internal class WarehouseUnavailableException : Exception
 internal class WarehouseTimeoutException : Exception
 {
     public WarehouseTimeoutException(string message, Exception? inner = null) : base(message, inner) { }
+}
+
+internal interface IOrderEventPublisher
+{
+   
+    Task PublishOrderCreatedAsync(OrderCreatedMessage message, CancellationToken ct);
 }
