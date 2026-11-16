@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Orders.Module.Messaging;
 using Orders.Contracts;
 using Orders.Module.Data;
 using Orders.Module.Ports;
@@ -12,6 +13,7 @@ internal class OrdersService : IOrdersApi
     private const int MaxLines = 50;
     private const int MaxQuantityPerLine = 1000;
     private readonly ICustomerContact _contact;
+    private readonly IOrderEventPublisher _events;
     private static readonly Dictionary<OrderStatus, OrderStatus[]> Transitions = new()
     {
         [OrderStatus.Pending]   = new[] { OrderStatus.Confirmed, OrderStatus.Cancelled },
@@ -28,13 +30,14 @@ internal class OrdersService : IOrdersApi
     private readonly ILogger<OrdersService> _log;
 
     public OrdersService(OrdersDbContext db, IProductCatalog catalog,
-        IStockReservation stock, ICartSource cart,ICustomerContact contact, ILogger<OrdersService> log)
+        IStockReservation stock, ICartSource cart,ICustomerContact contact,  IOrderEventPublisher events,ILogger<OrdersService> log)
     {
         _db = db;
         _catalog = catalog;
         _stock = stock;
         _cart = cart;
         _contact = contact;
+         _events = events;
         _log = log;
     }
 
@@ -135,11 +138,28 @@ internal class OrdersService : IOrdersApi
             await SafeReleaseAsync(orderId);
             throw;
         }
-      _log.LogInformation("Order {OrderId}: customer contact resolved = {Resolved}",
-       orderId, _contact.GetCurrent() is not null);
+      await PublishOrderCreatedSafeAsync(order, ct);
         return ToDto(order);
     }
+    private async Task PublishOrderCreatedSafeAsync(Order order, CancellationToken ct)
+    {
+        var contact = _contact.GetCurrent();   // داخل نفس الطلب
+        if (contact is null)
+        {
+            _log.LogWarning("Order {OrderId}: no customer email in token; order.created not published.", order.Id);
+            return;
+        }
 
+        try
+        {
+            var message = OrderCreatedMessage.From(order, contact.Name, contact.Email);
+            await _events.PublishOrderCreatedAsync(message, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            _log.LogError(ex, "Order {OrderId} saved but order.created could not be published.", order.Id);
+        }
+    }
     public async Task<OrderDto> GetAsync(Guid id, Guid requesterId, bool isAdmin, CancellationToken ct)
     {
         // منع IDOR: الشرط داخل الاستعلام نفسه
@@ -210,7 +230,7 @@ internal class OrdersService : IOrdersApi
         if (affected == 0)
             throw new AppException(409, "status_conflict",
                 "The order status was changed by someone else. Reload and try again.");
-
+     // REALTIME-HOOK (C2-4): order.status-changed broadcast to private-order.{id}
         if (newStatus == OrderStatus.Cancelled)
             await SafeReleaseAsync(id);   // إرجاع الكمية المحجوزة
 
