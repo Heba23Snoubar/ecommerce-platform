@@ -1,4 +1,4 @@
-﻿namespace OrderWorker;
+﻿namespace OrderWorker.Interface;
 
 public interface IProcessedOrderStore
 {

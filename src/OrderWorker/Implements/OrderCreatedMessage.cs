@@ -1,4 +1,4 @@
-﻿namespace OrderWorker;
+﻿namespace OrderWorker.Implements;
 
 public sealed record OrderCreatedMessage(
     Guid MessageId,

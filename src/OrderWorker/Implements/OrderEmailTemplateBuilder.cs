@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Text;
 
-namespace OrderWorker;
+namespace OrderWorker.Implements;
 
 public static class OrderEmailTemplateBuilder
 {

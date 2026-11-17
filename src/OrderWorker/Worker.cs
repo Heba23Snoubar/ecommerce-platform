@@ -1,5 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
+using OrderWorker.Implements;
+using OrderWorker.Interface;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 

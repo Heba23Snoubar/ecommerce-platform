@@ -1,4 +1,6 @@
-﻿namespace OrderWorker;
+﻿using OrderWorker.Implements;
+
+namespace OrderWorker.Interface;
 
 public interface IEmailSender
 {

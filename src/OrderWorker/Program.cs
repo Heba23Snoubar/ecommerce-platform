@@ -1,4 +1,6 @@
 ﻿using OrderWorker;
+using OrderWorker.Implements;
+using OrderWorker.Interface;
 
 var builder = Host.CreateApplicationBuilder(args);
 

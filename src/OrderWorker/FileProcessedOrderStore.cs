@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using OrderWorker.Interface;
+using System.Text.Json;
 
 namespace OrderWorker;
 
