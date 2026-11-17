@@ -2,8 +2,9 @@
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
+using OrderWorker.Interface;
 
-namespace OrderWorker;
+namespace OrderWorker.Implements;
 
 public sealed class SmtpEmailSender : IEmailSender
 {

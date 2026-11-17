@@ -113,8 +113,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-
-# =========================================
+      # =========================================
   # Order Email Background Worker
   # =========================================
   order-worker:
@@ -123,14 +122,17 @@ services:
       dockerfile: src/OrderWorker/Dockerfile
     environment:
       RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
+      RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
+      SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       SMTP_FROM: ${SMTP_FROM}
+      IDEMPOTENCY_DATA_DIR: /app/data
+    volumes:
+      - order-worker-data:/app/data
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -145,3 +147,4 @@ volumes:
   app-db-replica-data:
   warehouse-db-data:
   rabbitmq-data:
+  order-worker-data:
