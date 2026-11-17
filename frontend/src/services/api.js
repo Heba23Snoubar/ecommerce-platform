@@ -1,6 +1,7 @@
 import axios from "axios";
 import { API_BASE_URL } from "../config";
 import { storage } from "../utils/storage";
+import { disconnectRealtime } from "./realtime";
 
 // Error carrying the unified backend format: { code, message, details }.
 export class ApiError extends Error {
@@ -84,6 +85,7 @@ http.interceptors.response.use(
       storage.remove("shopflow_token");
       storage.remove("shopflow_refresh_token");
       storage.remove("shopflow_user");
+      disconnectRealtime();
       window.location.assign("/login");
     }
 
