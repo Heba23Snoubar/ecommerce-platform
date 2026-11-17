@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { storeApi } from "../services/storeApi";
 import { storage } from "../utils/storage";
+import { disconnectRealtime } from "../services/realtime";
 
 const AuthContext = createContext(null);
 
@@ -30,6 +31,7 @@ export function AuthProvider({ children }) {
             storage.remove("shopflow_token");
             storage.remove("shopflow_refresh_token");
             storage.remove("shopflow_user");
+            disconnectRealtime();
             setUser(null);
           }
         });
@@ -69,6 +71,7 @@ export function AuthProvider({ children }) {
       storage.remove("shopflow_token");
       storage.remove("shopflow_refresh_token");
       storage.remove("shopflow_user");
+      disconnectRealtime();
       setUser(null);
     }
   };
