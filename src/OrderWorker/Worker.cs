@@ -19,23 +19,26 @@ public sealed class Worker : BackgroundService
         PropertyNameCaseInsensitive = true
     };
 
+
     private readonly ILogger<Worker> _logger;
     private readonly RabbitMqSettings _rabbitSettings;
     private readonly SmtpSettings _smtpSettings;
-
+    private readonly IEmailSender _emailSender;
+     
     private IConnection? _connection;
     private IModel? _channel;
 
     public Worker(
         ILogger<Worker> logger,
         RabbitMqSettings rabbitSettings,
-        SmtpSettings smtpSettings)
+        SmtpSettings smtpSettings,
+        IEmailSender emailSender)
     {
         _logger = logger;
         _rabbitSettings = rabbitSettings;
         _smtpSettings = smtpSettings;
+        _emailSender = emailSender;
     }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation(
@@ -168,7 +171,7 @@ public sealed class Worker : BackgroundService
         }
     }
 
-    private Task ProcessOrderMessageAsync(OrderCreatedMessage message)
+    private async Task ProcessOrderMessageAsync(OrderCreatedMessage message)
     {
         _logger.LogInformation(
             "Processing order.created event: MessageId={MessageId}, OrderId={OrderId}, Customer={CustomerName} <{CustomerEmail}>, ItemsCount={ItemsCount}, Total={Total} (CreatedAtUtc={CreatedAtUtc:O})",
@@ -180,9 +183,8 @@ public sealed class Worker : BackgroundService
             message.Total,
             message.CreatedAtUtc);
 
-        return Task.CompletedTask;
+        await _emailSender.SendOrderConfirmationAsync(message);
     }
-
     private void OnConnectionShutdown(object? sender, ShutdownEventArgs args)
     {
         _logger.LogWarning(
