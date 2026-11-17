@@ -2,7 +2,6 @@
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// مسح أي مصادر إعدادات نصية والاعتماد حصراً على متغيرات البيئة
 builder.Configuration.Sources.Clear();
 builder.Configuration.AddEnvironmentVariables();
 
@@ -11,6 +10,7 @@ var smtpSettings = SmtpSettings.FromEnvironment();
 
 builder.Services.AddSingleton(rabbitSettings);
 builder.Services.AddSingleton(smtpSettings);
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();

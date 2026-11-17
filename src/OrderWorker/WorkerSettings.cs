@@ -51,13 +51,22 @@ public sealed class SmtpSettings
         var password = Environment.GetEnvironmentVariable("SMTP_PASSWORD") ?? string.Empty;
         var from = Environment.GetEnvironmentVariable("SMTP_FROM") ?? string.Empty;
 
+        if (string.IsNullOrWhiteSpace(host))
+            throw new InvalidOperationException("SMTP_HOST environment variable is required.");
+
+        if (string.IsNullOrWhiteSpace(user))
+            throw new InvalidOperationException("SMTP_USER environment variable is required.");
+
+        if (string.IsNullOrWhiteSpace(password))
+            throw new InvalidOperationException("SMTP_PASSWORD environment variable is required.");
+
         return new SmtpSettings
         {
-            Host = host,
+            Host = host.Trim(),
             Port = int.TryParse(portRaw, out var port) ? port : 587,
-            User = user,
-            Password = password,
-            From = from
+            User = user.Trim(),
+            Password = password.Trim(),
+            From = string.IsNullOrWhiteSpace(from) ? user.Trim() : from.Trim()
         };
     }
 }
