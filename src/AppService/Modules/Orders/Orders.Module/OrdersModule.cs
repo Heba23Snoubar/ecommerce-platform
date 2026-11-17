@@ -37,6 +37,11 @@ public static class OrdersModule
             services.AddScoped<IStockReservation, WarehouseStockReservation>();
 
         services.AddScoped<ICartSource, CartSourceAdapter>();
+        services.AddScoped<ICustomerContact, CustomerContactAdapter>();
+        if (configuration.GetValue<bool>("Orders:UseFakeEvents"))
+        services.AddSingleton<IOrderEventPublisher, FakeOrderEventPublisher>();
+        else
+         services.AddSingleton<IOrderEventPublisher, RabbitMqOrderEventPublisher>();
         services.AddHostedService<RabbitTopologyInitializer>();
 
         return services;

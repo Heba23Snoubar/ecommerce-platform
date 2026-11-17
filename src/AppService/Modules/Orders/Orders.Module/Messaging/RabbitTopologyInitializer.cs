@@ -10,13 +10,7 @@ internal sealed class RabbitTopologyInitializer(
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        var factory = new ConnectionFactory
-        {
-            HostName = config["RABBITMQ_HOST"] ?? "localhost",
-            Port = int.TryParse(config["RABBITMQ_PORT"], out var p) ? p : 5672,
-            UserName = config["RABBITMQ_USER"] ?? "app",
-            Password = config["RABBITMQ_PASSWORD"] ?? ""
-        };
+        var factory = RabbitMqConfig.CreateFactory(config);
 
         while (!ct.IsCancellationRequested)
         {
