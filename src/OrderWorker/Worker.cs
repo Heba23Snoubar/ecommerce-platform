@@ -13,6 +13,9 @@ public sealed class Worker : BackgroundService
 
     public const string DeadLetterExchange = "orders.dlx";
     public const string DeadLetterQueue = "orders.email.dlq";
+    private const int MaxRetryAttempts = 3;
+    private static readonly TimeSpan BaseRetryDelay = TimeSpan.FromSeconds(2);
+
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -24,21 +27,26 @@ public sealed class Worker : BackgroundService
     private readonly RabbitMqSettings _rabbitSettings;
     private readonly SmtpSettings _smtpSettings;
     private readonly IEmailSender _emailSender;
-     
-    private IConnection? _connection;
-    private IModel? _channel;
+    private readonly IProcessedOrderStore _processedOrderStore;
 
     public Worker(
         ILogger<Worker> logger,
         RabbitMqSettings rabbitSettings,
         SmtpSettings smtpSettings,
-        IEmailSender emailSender)
+        IEmailSender emailSender,
+        IProcessedOrderStore processedOrderStore)
     {
         _logger = logger;
         _rabbitSettings = rabbitSettings;
         _smtpSettings = smtpSettings;
         _emailSender = emailSender;
+        _processedOrderStore = processedOrderStore;
     }
+
+    private IConnection? _connection;
+    private IModel? _channel;
+
+   
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation(
@@ -148,7 +156,23 @@ public sealed class Worker : BackgroundService
 
         try
         {
+            // B4-3: فحص التكرار (Idempotency) قبل الإرسال
+            if (await _processedOrderStore.HasBeenProcessedAsync(message.OrderId))
+            {
+                _logger.LogWarning(
+                    "Duplicate message detected for OrderId={OrderId} (MessageId={MessageId}, DeliveryTag={DeliveryTag}). Skipping email send and ACKing.",
+                    message.OrderId,
+                    message.MessageId,
+                    args.DeliveryTag);
+
+                channel.BasicAck(deliveryTag: args.DeliveryTag, multiple: false);
+                return;
+            }
+
             await ProcessOrderMessageAsync(message);
+
+            // B4-3: تسجيل الطلب في السجل الدائم بعد نجاح الإرسال وقبل إرسال Ack
+            await _processedOrderStore.MarkAsProcessedAsync(message.OrderId, message.MessageId);
 
             // B2-3: إرسال Ack يدوي فقط بعد نجاح المعالجة بالكامل
             channel.BasicAck(deliveryTag: args.DeliveryTag, multiple: false);
@@ -164,14 +188,18 @@ public sealed class Worker : BackgroundService
         {
             _logger.LogError(
                 ex,
-                "Failed to process message: MessageId={MessageId}, OrderId={OrderId}, DeliveryTag={DeliveryTag}. Message was NOT acknowledged.",
+                "All {MaxAttempts} retry attempts exhausted for MessageId={MessageId}, OrderId={OrderId}, DeliveryTag={DeliveryTag}. Rejecting message to DLQ '{Dlq}' (requeue=false).",
+                MaxRetryAttempts,
                 message.MessageId,
                 message.OrderId,
-                args.DeliveryTag);
+                args.DeliveryTag,
+                DeadLetterQueue);
+
+            // B4-2: رفض الرسالة بدون إعادة توجيهها للطابور الرئيسي لتنتقل تلقائياً إلى DLQ
+            channel.BasicReject(deliveryTag: args.DeliveryTag, requeue: false);
         }
     }
-
-    private async Task ProcessOrderMessageAsync(OrderCreatedMessage message)
+    private async Task ProcessOrderMessageAsync(OrderCreatedMessage message, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
             "Processing order.created event: MessageId={MessageId}, OrderId={OrderId}, Customer={CustomerName} <{CustomerEmail}>, ItemsCount={ItemsCount}, Total={Total} (CreatedAtUtc={CreatedAtUtc:O})",
@@ -183,7 +211,43 @@ public sealed class Worker : BackgroundService
             message.Total,
             message.CreatedAtUtc);
 
-        await _emailSender.SendOrderConfirmationAsync(message);
+        await ExecuteWithRetryAsync(
+            operation: ct => _emailSender.SendOrderConfirmationAsync(message, ct),
+            messageId: message.MessageId,
+            orderId: message.OrderId,
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task ExecuteWithRetryAsync(
+        Func<CancellationToken, Task> operation,
+        Guid messageId,
+        Guid orderId,
+        CancellationToken cancellationToken)
+    {
+        for (int attempt = 1; attempt <= MaxRetryAttempts; attempt++)
+        {
+            try
+            {
+                await operation(cancellationToken);
+                return;
+            }
+            catch (Exception ex) when (attempt < MaxRetryAttempts && !cancellationToken.IsCancellationRequested)
+            {
+                // تأخير متدرج: 2s بعد المحاولة 1، 4s بعد المحاولة 2
+                var delay = TimeSpan.FromSeconds(BaseRetryDelay.TotalSeconds * Math.Pow(2, attempt - 1));
+
+                _logger.LogWarning(
+                    ex,
+                    "Attempt {Attempt}/{MaxAttempts} failed for MessageId={MessageId}, OrderId={OrderId}. Retrying in {DelaySeconds}s...",
+                    attempt,
+                    MaxRetryAttempts,
+                    messageId,
+                    orderId,
+                    delay.TotalSeconds);
+
+                await Task.Delay(delay, cancellationToken);
+            }
+        }
     }
     private void OnConnectionShutdown(object? sender, ShutdownEventArgs args)
     {
