@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Orders.Module.Messaging;
 using Orders.Contracts;
 using Orders.Module.Data;
+using Orders.Module.Messaging;
 using Orders.Module.Ports;
 using Shared.Errors;
 
@@ -14,11 +14,13 @@ internal class OrdersService : IOrdersApi
     private const int MaxQuantityPerLine = 1000;
     private readonly ICustomerContact _contact;
     private readonly IOrderEventPublisher _events;
+    private readonly IOrderRealtimeNotifier _realtime;
+
     private static readonly Dictionary<OrderStatus, OrderStatus[]> Transitions = new()
     {
-        [OrderStatus.Pending]   = new[] { OrderStatus.Confirmed, OrderStatus.Cancelled },
+        [OrderStatus.Pending] = new[] { OrderStatus.Confirmed, OrderStatus.Cancelled },
         [OrderStatus.Confirmed] = new[] { OrderStatus.Shipped, OrderStatus.Cancelled },
-        [OrderStatus.Shipped]   = new[] { OrderStatus.Delivered },
+        [OrderStatus.Shipped] = new[] { OrderStatus.Delivered },
         [OrderStatus.Delivered] = Array.Empty<OrderStatus>(),
         [OrderStatus.Cancelled] = Array.Empty<OrderStatus>(),
     };
@@ -29,15 +31,23 @@ internal class OrdersService : IOrdersApi
     private readonly ICartSource _cart;
     private readonly ILogger<OrdersService> _log;
 
-    public OrdersService(OrdersDbContext db, IProductCatalog catalog,
-        IStockReservation stock, ICartSource cart,ICustomerContact contact,  IOrderEventPublisher events,ILogger<OrdersService> log)
+    public OrdersService(
+        OrdersDbContext db,
+        IProductCatalog catalog,
+        IStockReservation stock,
+        ICartSource cart,
+        ICustomerContact contact,
+        IOrderEventPublisher events,
+        IOrderRealtimeNotifier realtime,
+        ILogger<OrdersService> log)
     {
         _db = db;
         _catalog = catalog;
         _stock = stock;
         _cart = cart;
         _contact = contact;
-         _events = events;
+        _events = events;
+        _realtime = realtime;
         _log = log;
     }
 
@@ -77,12 +87,12 @@ internal class OrdersService : IOrdersApi
             .Select(l => l.ProductId).ToList();
         if (missing.Count > 0)
             throw new AppException(422, "product_not_found", "Some products do not exist or are not available.",
-                            new { productIds = missing });
+                new { productIds = missing });
 
         // 3) المعرّف يولَّد أولاً، وهو نفسه reservation_id في المستودع
         var orderId = Guid.NewGuid();
 
-       // 4) حجز الكمية (كلها أو لا شيء) مع معالجة توقف المستودع أو بطئه
+        // 4) حجز الكمية (كلها أو لا شيء) مع معالجة توقف المستودع أو بطئه
         ReserveResult reserve;
         try
         {
@@ -110,6 +120,7 @@ internal class OrdersService : IOrdersApi
         if (reserve.Outcome == ReserveOutcome.ProductNotFound)
             throw new AppException(422, "product_not_found",
                 reserve.Message ?? "Product not found in warehouse.", reserve.Details);
+
         // 5) حفظ الطلب، وعند الفشل نُرجع الكمية المحجوزة
         var order = new Order { Id = orderId, UserId = userId, Status = OrderStatus.Pending };
         foreach (var l in lines)
@@ -138,9 +149,13 @@ internal class OrdersService : IOrdersApi
             await SafeReleaseAsync(orderId);
             throw;
         }
-      await PublishOrderCreatedSafeAsync(order, ct);
+
+        await PublishOrderCreatedSafeAsync(order, ct);
+        await BroadcastOrderCreatedSafeAsync(order, ct);
+
         return ToDto(order);
     }
+
     private async Task PublishOrderCreatedSafeAsync(Order order, CancellationToken ct)
     {
         var contact = _contact.GetCurrent();   // داخل نفس الطلب
@@ -160,6 +175,48 @@ internal class OrdersService : IOrdersApi
             _log.LogError(ex, "Order {OrderId} saved but order.created could not be published.", order.Id);
         }
     }
+
+    private async Task BroadcastOrderCreatedSafeAsync(Order order, CancellationToken ct)
+    {
+        try
+        {
+            var summary = new OrderSummaryDto(
+                order.Id,
+                order.UserId,
+                order.Status,
+                order.Total,
+                order.CreatedAt,
+                order.Items.Count);
+
+            await _realtime.NotifyOrderCreatedAsync(summary, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            _log.LogError(ex, "Order {OrderId} saved but order.created realtime broadcast failed.", order.Id);
+        }
+    }
+
+    private async Task BroadcastOrderStatusChangedSafeAsync(
+        Guid orderId, OrderStatus oldStatus, OrderStatus newStatus, CancellationToken ct)
+    {
+        try
+        {
+            var payload = new OrderStatusChangedRealtimePayload(
+                orderId,
+                oldStatus,
+                newStatus,
+                DateTime.UtcNow);
+
+            await _realtime.NotifyOrderStatusChangedAsync(payload, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            _log.LogError(ex,
+                "Order {OrderId} status updated ({OldStatus} -> {NewStatus}) but order.status-changed realtime broadcast failed.",
+                orderId, oldStatus, newStatus);
+        }
+    }
+
     public async Task<OrderDto> GetAsync(Guid id, Guid requesterId, bool isAdmin, CancellationToken ct)
     {
         // منع IDOR: الشرط داخل الاستعلام نفسه
@@ -230,7 +287,10 @@ internal class OrdersService : IOrdersApi
         if (affected == 0)
             throw new AppException(409, "status_conflict",
                 "The order status was changed by someone else. Reload and try again.");
-     // REALTIME-HOOK (C2-4): order.status-changed broadcast to private-order.{id}
+
+        // REALTIME-HOOK (C2-4): order.status-changed broadcast to private-order.{id}
+        await BroadcastOrderStatusChangedSafeAsync(id, oldStatus, newStatus, ct);
+
         if (newStatus == OrderStatus.Cancelled)
             await SafeReleaseAsync(id);   // إرجاع الكمية المحجوزة
 
@@ -265,7 +325,7 @@ internal class OrdersService : IOrdersApi
         if (merged.Count > MaxLines)
             throw Invalid($"An order can contain at most {MaxLines} different products.");
         if (merged.Any(m => m.Quantity > MaxQuantityPerLine))
-            throw Invalid($"Total quantity per product must not exceed {MaxQuantityPerLine}.");
+            throw Invalid($"Total quantity per product must not exceed {MaxLines}.");
 
         return merged;
     }
