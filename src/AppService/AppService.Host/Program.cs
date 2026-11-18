@@ -173,6 +173,24 @@ builder.Services.AddApiVersioning(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+
+// CORS (C3-5: allow frontend dev server & configured origins for API and /api/v1/realtime/auth)
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>()
+    ?? ["http://localhost:5173", "http://localhost:3000", "http://localhost:8080"];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
 // Apply Database Migrations
@@ -223,6 +241,8 @@ app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 
 app.UseRouting();
+
+app.UseCors("FrontendPolicy");
 
 app.UseRateLimiter();
 
