@@ -44,6 +44,13 @@ public static class OrdersModule
          services.AddSingleton<IOrderEventPublisher, RabbitMqOrderEventPublisher>();
         services.AddHostedService<RabbitTopologyInitializer>();
 
+         
+
+        if (configuration.GetValue<bool>("Orders:UseFakeRealtime"))
+            services.AddSingleton<IOrderRealtimeNotifier, FakeOrderRealtimeNotifier>();
+        else
+            services.AddSingleton<IOrderRealtimeNotifier, PusherOrderRealtimeNotifier>();
+
         return services;
     }
 

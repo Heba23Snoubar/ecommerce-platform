@@ -1,4 +1,6 @@
+using Orders.Contracts;
 using Orders.Module.Messaging;
+
 namespace Orders.Module.Ports;
 
 internal record ProductInfo(Guid Id, string Name, decimal Price);
@@ -19,6 +21,7 @@ internal interface IStockReservation
 
     Task ReleaseAsync(Guid reservationId, CancellationToken ct);
 }
+
 internal record CartLine(Guid ProductId, int Quantity);
 
 internal interface ICartSource
@@ -41,7 +44,6 @@ internal class WarehouseTimeoutException : Exception
 
 internal interface IOrderEventPublisher
 {
-   
     Task PublishOrderCreatedAsync(OrderCreatedMessage message, CancellationToken ct);
 }
 
@@ -50,4 +52,16 @@ internal record CustomerContact(string Name, string Email);
 internal interface ICustomerContact
 {
     CustomerContact? GetCurrent();
+}
+
+internal record OrderStatusChangedRealtimePayload(
+    Guid OrderId,
+    OrderStatus OldStatus,
+    OrderStatus NewStatus,
+    DateTime UpdatedAt);
+
+internal interface IOrderRealtimeNotifier
+{
+    Task NotifyOrderCreatedAsync(OrderSummaryDto order, CancellationToken ct);
+    Task NotifyOrderStatusChangedAsync(OrderStatusChangedRealtimePayload payload, CancellationToken ct);
 }

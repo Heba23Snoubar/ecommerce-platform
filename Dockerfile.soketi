@@ -1,0 +1,4 @@
+﻿FROM node:18-bookworm-slim
+RUN npm install -g @soketi/soketi@1.4.16
+EXPOSE 6001 9601
+ENTRYPOINT ["soketi", "start"]
