@@ -172,6 +172,21 @@ services:
     <<: *appservice-common
 
   # =========================================
+  # Nginx Load Balancer
+  # =========================================
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8088:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app1
+      - app2
+      - app3
+    restart: unless-stopped
+
+  # =========================================
   # RabbitMQ Message Broker
   # =========================================
   rabbitmq:
