@@ -27,6 +27,8 @@ namespace Shared.Database
         public bool ShouldUsePrimaryDatabase()
         {
             var context = _httpContextAccessor.HttpContext;
+
+            // Requests outside HTTP must use the primary database.
             if (context is null)
             {
                 return true;
@@ -34,34 +36,28 @@ namespace Shared.Database
 
             var method = context.Request.Method;
 
+            // Mutating requests always use the primary database.
             if (!HttpMethods.IsGet(method) && !HttpMethods.IsHead(method))
             {
-                MarkWriteOperation();
                 return true;
             }
 
-            foreach (var key in GetClientKeys(context))
-            {
-                if (_cache.TryGetValue(key, out _))
-                {
-                    return true;  
-                }
-            }
-
-            return false;
+             return context.Items.TryGetValue(
+                       ReadYourOwnWritesMiddleware.UsePrimaryDatabaseItemKey,
+                       out var value)
+                   && value is true;
         }
 
         public void MarkWriteOperation()
         {
             var context = _httpContextAccessor.HttpContext;
-            if (context is null) return;
-
-            foreach (var key in GetClientKeys(context))
+            if (context is null)
             {
-                _cache.Set(key, true, WriteStickyDuration);
+                return;
             }
-        }
 
+             context.Items[ReadYourOwnWritesMiddleware.UsePrimaryDatabaseItemKey] = true;
+        }
         public string ResolveConnectionString(string primaryConnectionString, string? replicaConnectionString = null)
         {
             var usePrimary = ShouldUsePrimaryDatabase();
@@ -88,17 +84,33 @@ namespace Shared.Database
             return primaryConnectionString.Replace("Port=5432", "Port=5434");
         }
 
+
         private bool IsReplicaHealthy()
         {
             return _cache.GetOrCreate("replica_health_status", entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(5);
+
                 try
                 {
                     using var client = new System.Net.Sockets.TcpClient();
-                    var result = client.BeginConnect("localhost", 5434, null, null);
-                    var success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(100));
-                    return success && client.Connected;
+
+                    var result = client.BeginConnect(
+                        "app-db-replica",
+                        5432,
+                        null,
+                        null);
+
+                    var connected = result.AsyncWaitHandle.WaitOne(
+                        TimeSpan.FromMilliseconds(500));
+
+                    if (!connected)
+                    {
+                        return false;
+                    }
+
+                    client.EndConnect(result);
+                    return client.Connected;
                 }
                 catch
                 {
@@ -106,6 +118,7 @@ namespace Shared.Database
                 }
             });
         }
+         
         private static IEnumerable<string> GetClientKeys(HttpContext context)
         {
             var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)

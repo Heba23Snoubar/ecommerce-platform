@@ -17,6 +17,7 @@ x-appservice-common: &appservice-common
 
     # PostgreSQL - Main Application Database
     ConnectionStrings__CatalogDb: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=products_role;Password=${PRODUCTS_DB_PASSWORD}"
+    ConnectionStrings__CatalogDbReplica: "Host=app-db-replica;Port=5432;Database=${APP_DB_NAME};Username=products_role;Password=${PRODUCTS_DB_PASSWORD}"
     ConnectionStrings__Users: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=users_role;Password=${USERS_DB_PASSWORD}"
     ConnectionStrings__Orders: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=orders_role;Password=${ORDERS_DB_PASSWORD}"
     ConnectionStrings__Notifications: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=notifications_role;Password=${NOTIFICATIONS_DB_PASSWORD}"
@@ -256,7 +257,7 @@ services:
   # Soketi WebSocket Server (Pusher Protocol)
   # =========================================
   soketi:
-    image: quay.io/soketi/soketi:1.4-16-debian
+    image: quay.io/soketi/soketi:latest
     environment:
       SOKETI_DEBUG: "1"
       SOKETI_METRICS_ENABLED: "1"

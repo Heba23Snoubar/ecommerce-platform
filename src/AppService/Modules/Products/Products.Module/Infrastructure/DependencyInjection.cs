@@ -69,6 +69,8 @@ namespace Catalog.Module.Infrastructure
             services.AddScoped<IProductQueryService, ProductQueryService>();
             services.AddScoped<ICategoryQueryService, CategoryQueryService>();
 
+            services.AddScoped<IWriteRoutingMarkerStore, RedisWriteRoutingMarkerStore>();
+
             return services;
         }
     }
