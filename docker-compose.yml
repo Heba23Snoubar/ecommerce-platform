@@ -1,3 +1,61 @@
+# =========================================
+# Shared AppService Configuration
+# =========================================
+x-appservice-common: &appservice-common
+  build:
+    context: .
+    dockerfile: src/AppService/Dockerfile
+
+  environment:
+    ASPNETCORE_ENVIRONMENT: Development
+    ASPNETCORE_URLS: http://+:8080
+
+    # JWT
+    JWT_KEY: ${JWT_KEY}
+    JWT_ISSUER: ${JWT_ISSUER}
+    JWT_AUDIENCE: ${JWT_AUDIENCE}
+
+    # PostgreSQL - Main Application Database
+    ConnectionStrings__CatalogDb: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=products_role;Password=${PRODUCTS_DB_PASSWORD}"
+    ConnectionStrings__Users: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=users_role;Password=${USERS_DB_PASSWORD}"
+    ConnectionStrings__Orders: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=orders_role;Password=${ORDERS_DB_PASSWORD}"
+    ConnectionStrings__Notifications: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=notifications_role;Password=${NOTIFICATIONS_DB_PASSWORD}"
+    ConnectionStrings__CartDb: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=cart_role;Password=${CART_DB_PASSWORD}"
+
+    # Redis
+    REDIS_CONNECTION_STRING: "redis:6379,abortConnect=false,connectTimeout=3000"
+
+    # RabbitMQ
+    RABBITMQ_HOST: rabbitmq
+    RABBITMQ_PORT: 5672
+    RABBITMQ_USER: ${RABBITMQ_USER}
+    RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+
+    # Warehouse
+    Warehouse__Url: http://warehouse:8080
+
+    # Soketi / Pusher
+    Pusher__AppId: ${PUSHER_APP_ID:-app-id}
+    Pusher__Key: ${PUSHER_APP_KEY:-app-key}
+    Pusher__Secret: ${PUSHER_APP_SECRET:-change_me_pusher}
+    Pusher__Host: soketi
+    Pusher__Port: 6001
+
+  depends_on:
+    app-db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    rabbitmq:
+      condition: service_healthy
+    warehouse:
+      condition: service_started
+    soketi:
+      condition: service_started
+
+  restart: unless-stopped
+
+
 services:
 
   # =========================================
@@ -98,6 +156,39 @@ services:
     depends_on:
       warehouse-db:
         condition: service_healthy
+
+  # =========================================
+  # AppService Instances
+  # =========================================
+  app1:
+    <<: *appservice-common
+    ports:
+      - "${APPSERVICE_PORT:-5097}:8080"
+
+  app2:
+    <<: *appservice-common
+
+  app3:
+    <<: *appservice-common
+
+  # =========================================
+  # Nginx Load Balancer
+  # =========================================
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8088:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app1
+      - app2
+      - app3
+    restart: unless-stopped
+
+  # =========================================
+  # RabbitMQ Message Broker
+  # =========================================
   rabbitmq:
     image: rabbitmq:3-management
     environment:
@@ -112,11 +203,31 @@ services:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 10 
+      retries: 10
 
+  # =========================================
+  # Redis Cache
+  # =========================================
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --maxmemory ${REDIS_MAX_MEMORY:-256mb}
+      --maxmemory-policy allkeys-lru
+      --save ""
+      --appendonly no
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
 
-
-# =========================================
+  # =========================================
   # Order Email Background Worker
   # =========================================
   order-worker:
@@ -168,3 +279,4 @@ volumes:
   warehouse-db-data:
   rabbitmq-data:
   order-worker-data:
+  redis-data:
