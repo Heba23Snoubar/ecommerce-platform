@@ -16,7 +16,6 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Users.Module;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Register Modules & Infrastructure
@@ -27,12 +26,7 @@ builder.Services.AddNotificationsModule(builder.Configuration);
 builder.Services.AddWarehouseInfrastructure(builder.Configuration);
 builder.Services.AddCartInfrastructure(builder.Configuration);
 
-
-
-
-builder.Services.AddDatabaseReplicaRouting();   
-
-
+builder.Services.AddDatabaseReplicaRouting();
 
 // JWT Configuration
 var jwtKey = builder.Configuration["JWT_KEY"]
@@ -173,12 +167,15 @@ builder.Services.AddApiVersioning(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
-// CORS (C3-5: allow frontend dev server & configured origins for API and /api/v1/realtime/auth)
+// CORS
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
     .Get<string[]>()
-    ?? ["http://localhost:5173", "http://localhost:3000", "http://localhost:8080"];
+    ?? [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:8080"
+    ];
 
 builder.Services.AddCors(options =>
 {
@@ -197,6 +194,7 @@ var app = builder.Build();
 app.Services.MigrateUsersModule();
 app.Services.MigrateOrdersModule();
 app.Services.MigrateNotificationsModule();
+app.Services.MigrateCatalogModule();
 
 // HSTS - Enable only outside Development
 if (!app.Environment.IsDevelopment())
@@ -248,7 +246,6 @@ app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
 
 app.UseReadYourOwnWritesRouting();
 

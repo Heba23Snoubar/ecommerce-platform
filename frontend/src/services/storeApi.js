@@ -33,12 +33,16 @@ const loadCategories = async (force = false) => {
   return categoryCache;
 };
 
-const mapUser = (u) => ({
-  id: u?.id ?? u?.Id,
-  name: u?.fullName ?? u?.FullName ?? u?.name ?? u?.email ?? u?.Email ?? "User",
-  email: u?.email ?? u?.Email,
-  role: String(u?.role ?? u?.Role ?? "Customer")
-});
+const mapUser = (u) => {
+  const rawRole = u?.role ?? u?.Role ?? "Customer";
+
+  return {
+    id: u?.id ?? u?.Id,
+    name: u?.fullName ?? u?.FullName ?? u?.name ?? u?.email ?? u?.Email ?? "User",
+    email: u?.email ?? u?.Email,
+    role: Number(rawRole) === 2 ? "Admin" : String(rawRole)
+  };
+};
 
 const mapProduct = (p, cats = []) => {
   const stock = first(p, "stock", "quantity", "availableQuantity");

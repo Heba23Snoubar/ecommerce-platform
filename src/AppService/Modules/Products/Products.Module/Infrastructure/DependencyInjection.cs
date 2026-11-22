@@ -1,7 +1,4 @@
-﻿
-
-
-using Catalog.Module.Application.Abstraction.Interfaces;
+﻿using Catalog.Module.Application.Abstraction.Interfaces;
 using Catalog.Module.Application.Abstraction.Repositories;
 using Catalog.Module.Application.Services.Implementations;
 using Catalog.Module.Application.Services.Interfaces;
@@ -27,7 +24,8 @@ namespace Catalog.Module.Infrastructure
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            services.AddModulePostgresDbContext<CatalogDbContext>(configuration, "CatalogDb", "products");
+            services.AddModulePostgresDbContext<CatalogDbContext>(
+                configuration, "CatalogDb", "products");
 
             // Redis Integration (Role C)
             var redisConn = configuration["REDIS_CONNECTION_STRING"]
@@ -46,12 +44,19 @@ namespace Catalog.Module.Infrastructure
                 try
                 {
                     var multiplexer = ConnectionMultiplexer.Connect(options);
-                    logger.LogInformation("Connected to Redis at {Endpoints}", string.Join(",", options.EndPoints));
+                    logger.LogInformation(
+                        "Connected to Redis at {Endpoints}",
+                        string.Join(",", options.EndPoints));
+
                     return multiplexer;
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(ex, "Failed initial connection to Redis at {RedisConn}. Running in degraded mode with background retry on configured endpoints.", redisConn);
+                    logger.LogWarning(
+                        ex,
+                        "Failed initial connection to Redis at {RedisConn}. Running in degraded mode with background retry on configured endpoints.",
+                        redisConn);
+
                     options.AbortOnConnectFail = false;
                     return ConnectionMultiplexer.Connect(options);
                 }
@@ -70,6 +75,15 @@ namespace Catalog.Module.Infrastructure
             services.AddScoped<ICategoryQueryService, CategoryQueryService>();
 
             return services;
+        }
+
+        public static void MigrateCatalogModule(this IServiceProvider sp)
+        {
+            using var scope = sp.CreateScope();
+
+            scope.ServiceProvider
+                .GetRequiredService<CatalogDbContext>()
+                .Database.Migrate();
         }
     }
 }
