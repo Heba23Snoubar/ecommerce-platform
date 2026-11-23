@@ -72,16 +72,17 @@ namespace Shared.Database
                 return primaryConnectionString;
             }
 
+
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"[DB-ROUTING] {method} {path} --> READ REPLICA DB (Port 5434)");
+            Console.WriteLine($"[DB-ROUTING] {method} {path} --> READ REPLICA DB (app-db-replica:5432)");
             Console.ResetColor();
 
             if (!string.IsNullOrWhiteSpace(replicaConnectionString))
             {
-                return replicaConnectionString;
+            return replicaConnectionString;
             }
 
-            return primaryConnectionString.Replace("Port=5432", "Port=5434");
+           return primaryConnectionString.Replace("Host=app-db", "Host=app-db-replica");
         }
 
 
