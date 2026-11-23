@@ -55,23 +55,21 @@ x-appservice-common: &appservice-common
       condition: service_started
 
   healthcheck:
-   test:
-     [
-       "CMD-SHELL",
-       "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n\" >&3 && out=$$(cat <&3) && echo \"$$out\" | grep -q \"200 OK\" && echo \"$$out\" | grep -q \"Healthy\"'"
-     ]
-   interval: 10s
-   timeout: 5s
-   retries: 5
-   start_period: 15s
+    test:
+      [
+        "CMD-SHELL",
+        "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n\" >&3 && out=$$(cat <&3) && echo \"$$out\" | grep -q \"200 OK\" && echo \"$$out\" | grep -q \"Healthy\"'"
+      ]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 15s
 
   restart: unless-stopped
 
-
 services:
-
   # =========================================
-  # Main Application Database (Primary - Write)
+  # Main Application Database
   # =========================================
   app-db:
     image: postgres:16
@@ -102,7 +100,7 @@ services:
       retries: 10
 
   # =========================================
-  # Read Replica Database (Standby - Read Only)
+  # Read Replica Database
   # =========================================
   app-db-replica:
     image: postgres:16
@@ -153,7 +151,7 @@ services:
       retries: 10
 
   # =========================================
-  # Warehouse gRPC Microservice (Spring Boot)
+  # Warehouse gRPC Microservice
   # =========================================
   warehouse:
     build:
@@ -244,7 +242,7 @@ services:
       retries: 10
 
   # =========================================
-  # Redis Cache
+  # Redis Cache and Shared Idempotency Store
   # =========================================
   redis:
     image: redis:7-alpine
@@ -277,21 +275,26 @@ services:
       RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       SMTP_FROM: ${SMTP_FROM}
-      IDEMPOTENCY_DATA_DIR: /app/data
-    volumes:
-      - order-worker-data:/app/data
+
+      REDIS_CONNECTION_STRING: "redis:6379,abortConnect=false,connectTimeout=3000"
+      REDIS_IDEMPOTENCY_TTL_MINUTES: ${REDIS_IDEMPOTENCY_TTL_MINUTES:-1440}
+
     depends_on:
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+
     restart: unless-stopped
 
   # =========================================
-  # Soketi WebSocket Server (Pusher Protocol)
+  # Soketi WebSocket Server
   # =========================================
   soketi:
     image: quay.io/soketi/soketi:latest
@@ -307,7 +310,6 @@ services:
       - "9601:9601"
     restart: unless-stopped
 
-
 # =========================================
 # Persistent Volumes
 # =========================================
@@ -316,5 +318,4 @@ volumes:
   app-db-replica-data:
   warehouse-db-data:
   rabbitmq-data:
-  order-worker-data:
   redis-data:

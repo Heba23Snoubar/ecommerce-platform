@@ -70,3 +70,44 @@ public sealed class SmtpSettings
         };
     }
 }
+
+public sealed class RedisSettings
+{
+    public string ConnectionString { get; init; } = string.Empty;
+
+    public TimeSpan IdempotencyTtl { get; init; } =
+        TimeSpan.FromHours(24);
+
+    public static RedisSettings FromEnvironment()
+    {
+        var connectionString =
+            Environment.GetEnvironmentVariable(
+                "REDIS_CONNECTION_STRING");
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                "REDIS_CONNECTION_STRING environment variable is required.");
+        }
+
+        var ttlRaw =
+            Environment.GetEnvironmentVariable(
+                "REDIS_IDEMPOTENCY_TTL_MINUTES");
+
+        var ttlMinutes = int.TryParse(ttlRaw, out var minutes)
+            ? minutes
+            : 1440;
+
+        if (ttlMinutes <= 0)
+        {
+            throw new InvalidOperationException(
+                "REDIS_IDEMPOTENCY_TTL_MINUTES must be greater than zero.");
+        }
+
+        return new RedisSettings
+        {
+            ConnectionString = connectionString.Trim(),
+            IdempotencyTtl = TimeSpan.FromMinutes(ttlMinutes)
+        };
+    }
+}
