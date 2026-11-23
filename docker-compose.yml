@@ -1,4 +1,4 @@
-# =========================================
+﻿# =========================================
 # Shared AppService Configuration
 # =========================================
 x-appservice-common: &appservice-common
@@ -283,10 +283,16 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       SMTP_FROM: ${SMTP_FROM}
       IDEMPOTENCY_DATA_DIR: /app/data
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_IDEMPOTENCY_TTL_HOURS: ${REDIS_IDEMPOTENCY_TTL_HOURS:-168}
     volumes:
       - order-worker-data:/app/data
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 

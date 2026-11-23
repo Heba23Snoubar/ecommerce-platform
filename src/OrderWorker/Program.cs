@@ -9,12 +9,12 @@ builder.Configuration.AddEnvironmentVariables();
 
 var rabbitSettings = RabbitMqSettings.FromEnvironment();
 var smtpSettings = SmtpSettings.FromEnvironment();
-
-var idempotencyDir = Environment.GetEnvironmentVariable("IDEMPOTENCY_DATA_DIR") ?? "/app/data";
+var redisSettings = RedisSettings.FromEnvironment();
 
 builder.Services.AddSingleton(rabbitSettings);
 builder.Services.AddSingleton(smtpSettings);
-builder.Services.AddSingleton<IProcessedOrderStore>(_ => new FileProcessedOrderStore(idempotencyDir));
+builder.Services.AddSingleton(redisSettings);
+builder.Services.AddSingleton<IProcessedOrderStore, RedisProcessedOrderStore>();
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddHostedService<Worker>();
 
