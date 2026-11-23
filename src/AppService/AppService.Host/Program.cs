@@ -10,6 +10,7 @@ using Notifications.Module;
 using Orders.Module;
 using Shared.Database;
 using Shared.Errors;
+using Shared.Middleware;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -236,7 +237,7 @@ if (app.Environment.IsDevelopment())
 
 // Error Handling Middleware
 app.UseMiddleware<ErrorHandlingMiddleware>();
-
+app.UseMiddleware<ServedByMiddleware>();
 app.UseHttpsRedirection();
 
 app.UseRouting();
