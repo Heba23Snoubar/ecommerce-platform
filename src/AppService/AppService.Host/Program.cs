@@ -89,6 +89,7 @@ builder.Services
 
 // Authorization
 builder.Services.AddAuthorization();
+builder.Services.AddHealthChecks();
 
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>
@@ -239,6 +240,7 @@ app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 
 app.UseRouting();
+app.MapHealthChecks("/health");
 
 app.UseCors("FrontendPolicy");
 
