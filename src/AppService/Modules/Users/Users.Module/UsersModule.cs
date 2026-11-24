@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Users.Module.Authorization;
 using Users.Module.Data;
+using Users.Module.Filters;
 using Users.Module.Services;
 
 namespace Users.Module;
@@ -40,6 +41,10 @@ public static class UsersModule
         services.AddScoped<IAuthService, AuthService>();
         services.AddHostedService<RbacSeedHostedService>();
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+
+        services.AddScoped<ILoginRateLimiter, RedisLoginRateLimiter>();
+        services.AddScoped<LoginRateLimitFilter>();
+
 
         return services;
     }

@@ -14,9 +14,10 @@ using Shared.Middleware;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.RateLimiting;
 using Users.Module;
+using System.Net;
 
+using Microsoft.AspNetCore.HttpOverrides;
 var builder = WebApplication.CreateBuilder(args);
 
 // Register Modules & Infrastructure
@@ -44,86 +45,87 @@ var jwtAudience = builder.Configuration["JWT_AUDIENCE"]
 
 if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
 {
-    throw new InvalidOperationException(
-        "JWT_KEY must contain at least 32 bytes.");
-}
 
-// Authentication
-builder.Services
-    .AddAuthentication(options =>
+
+    var trustedProxyIp = builder.Configuration[
+        "ForwardedHeaders:KnownProxies"];
+
+    if (!IPAddress.TryParse(trustedProxyIp, out var trustedProxyAddress))
     {
-        options.DefaultAuthenticateScheme =
-            JwtBearerDefaults.AuthenticationScheme;
+        throw new InvalidOperationException(
+            "A valid trusted proxy IP must be configured.");
+    }
 
-        options.DefaultChallengeScheme =
-            JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
-        options.TokenValidationParameters =
-            new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidIssuer = jwtIssuer,
+        options.ForwardedHeaders =
+            ForwardedHeaders.XForwardedFor |
+            ForwardedHeaders.XForwardedProto;
 
-                ValidateAudience = true,
-                ValidAudience = jwtAudience,
+        // Only one reverse proxy exists in the current topology.
+        options.ForwardLimit = 1;
 
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwtKey)),
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
 
-                ValidateLifetime = true,
-                RequireExpirationTime = true,
+        options.KnownProxies.Add(trustedProxyAddress);
 
-                ClockSkew = TimeSpan.FromSeconds(30),
-
-                NameClaimType = ClaimTypes.Name,
-                RoleClaimType = ClaimTypes.Role,
-
-                ValidAlgorithms =
-                [
-                    SecurityAlgorithms.HmacSha256
-                ]
-            };
+        if (trustedProxyAddress.AddressFamily ==
+            System.Net.Sockets.AddressFamily.InterNetwork)
+        {
+            options.KnownProxies.Add(
+                trustedProxyAddress.MapToIPv6());
+        }
+        options.KnownProxies.Add(IPAddress.Parse("::ffff:172.24.0.5"));
     });
 
-// Authorization
-builder.Services.AddAuthorization();
+
+
+    // Authentication
+    builder.Services
+        .AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme =
+                JwtBearerDefaults.AuthenticationScheme;
+
+            options.DefaultChallengeScheme =
+                JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters =
+                new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtIssuer,
+
+                    ValidateAudience = true,
+                    ValidAudience = jwtAudience,
+
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtKey)),
+
+                    ValidateLifetime = true,
+                    RequireExpirationTime = true,
+
+                    ClockSkew = TimeSpan.FromSeconds(30),
+
+                    NameClaimType = ClaimTypes.Name,
+                    RoleClaimType = ClaimTypes.Role,
+
+                    ValidAlgorithms =
+                    [
+                        SecurityAlgorithms.HmacSha256
+                    ]
+                };
+        });
+}
+
+    // Authorization
+    builder.Services.AddAuthorization();
 builder.Services.AddHealthChecks();
 
-// Rate Limiting
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-    options.AddPolicy("login", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString()
-                ?? "unknown",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 5,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0,
-                AutoReplenishment = true
-            }
-        )
-    );
-
-    options.OnRejected = async (context, cancellationToken) =>
-    {
-        context.HttpContext.Response.ContentType = "application/json";
-
-        await context.HttpContext.Response.WriteAsJsonAsync(
-            new ApiError(
-                "RATE_LIMIT_EXCEEDED",
-                "Too many login attempts. Please try again later."
-            ),
-            cancellationToken
-        );
-    };
-});
 
 // Controllers + Application Parts + Validation + Enums
 builder.Services.AddControllers()
@@ -192,6 +194,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+
 // Apply Database Migrations
 app.Services.MigrateUsersModule();
 app.Services.MigrateOrdersModule();
@@ -242,10 +246,6 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 app.MapHealthChecks("/health");
-
-app.UseCors("FrontendPolicy");
-
-app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
