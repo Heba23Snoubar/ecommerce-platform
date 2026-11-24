@@ -14,6 +14,9 @@ public class ServedByMiddleware
     public async Task Invoke(HttpContext ctx)
     {
         ctx.Response.Headers["X-Served-By"] = Environment.MachineName;
+
+  
+
         await _next(ctx);
     }
 }
