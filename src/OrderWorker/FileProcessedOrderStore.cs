@@ -20,6 +20,40 @@ public sealed class FileProcessedOrderStore : IProcessedOrderStore
         _records = LoadFromDisk();
     }
 
+    public async Task<bool> TryAcquireAsync(Guid orderId, Guid messageId, CancellationToken cancellationToken = default)
+    {
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_records.ContainsKey(orderId))
+                return false;
+
+            _records[orderId] = new ProcessedOrderRecord(orderId, messageId, DateTime.UtcNow);
+            await SaveToDiskAsync(cancellationToken);
+            return true;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public async Task ReleaseAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_records.Remove(orderId))
+            {
+                await SaveToDiskAsync(cancellationToken);
+            }
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
     public async Task<bool> HasBeenProcessedAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken);
