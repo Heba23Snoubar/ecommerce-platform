@@ -197,10 +197,15 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 
 // Apply Database Migrations
-app.Services.MigrateUsersModule();
-app.Services.MigrateOrdersModule();
-app.Services.MigrateNotificationsModule();
-app.Services.MigrateCatalogModule();
+var runMigrations = builder.Configuration.GetValue<bool>("RUN_MIGRATIONS");
+
+if (runMigrations)
+{
+    app.Services.MigrateUsersModule();
+    app.Services.MigrateOrdersModule();
+    app.Services.MigrateNotificationsModule();
+    app.Services.MigrateCatalogModule();
+}
 
 // HSTS - Enable only outside Development
 if (!app.Environment.IsDevelopment())

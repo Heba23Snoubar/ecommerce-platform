@@ -39,7 +39,12 @@ public static class UsersModule
         services.AddScoped<JwtTokenService>();
         services.AddScoped<AdminManagementService>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddHostedService<RbacSeedHostedService>();
+
+        if (configuration.GetValue<bool>("RUN_MIGRATIONS"))
+        {
+            services.AddHostedService<RbacSeedHostedService>();
+        }
+
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 
         services.AddScoped<ILoginRateLimiter, RedisLoginRateLimiter>();
