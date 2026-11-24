@@ -15,7 +15,13 @@ builder.Services.AddSingleton(rabbitSettings);
 builder.Services.AddSingleton(smtpSettings);
 builder.Services.AddSingleton(redisSettings);
 builder.Services.AddSingleton<IProcessedOrderStore, RedisProcessedOrderStore>();
-builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+var useFakeEmail = string.Equals(
+    Environment.GetEnvironmentVariable("EMAIL_SENDER"), "fake", StringComparison.OrdinalIgnoreCase);
+
+if (useFakeEmail)
+    builder.Services.AddSingleton<IEmailSender, FakeEmailSender>();
+else
+    builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();

@@ -287,6 +287,10 @@ services:
       REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       REDIS_IDEMPOTENCY_TTL_HOURS: ${REDIS_IDEMPOTENCY_TTL_HOURS:-168}
+      EMAIL_SENDER: ${EMAIL_SENDER:-smtp}
+      FAKE_EMAIL_DELAY_MS: ${FAKE_EMAIL_DELAY_MS:-0}
+      FAKE_EMAIL_FAIL_PREFIX: ${FAKE_EMAIL_FAIL_PREFIX:-fail-}
+      LOCK_TTL_SECONDS: ${LOCK_TTL_SECONDS:-60}
     volumes:
       - order-worker-data:/app/data
     depends_on:
