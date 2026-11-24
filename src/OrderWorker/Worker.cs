@@ -118,7 +118,7 @@ public sealed class Worker : BackgroundService
         await Task.Delay(Timeout.Infinite, stoppingToken);
     }
 
-    private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs args)
+  private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs args)
     {
         var channel = ((AsyncEventingBasicConsumer)sender).Model;
         var rawJson = Encoding.UTF8.GetString(args.Body.ToArray());
@@ -156,10 +156,13 @@ public sealed class Worker : BackgroundService
             return;
         }
 
+        bool lockAcquired = false;
+
         try
         {
-            // B4-3: فحص التكرار (Idempotency) قبل الإرسال
-            if (await _processedOrderStore.HasBeenProcessedAsync(message.OrderId))
+            // حجز ذري في Redis (SET NX) لمنع السباق بين نسخ order-worker المتعددة
+            lockAcquired = await _processedOrderStore.TryAcquireAsync(message.OrderId, message.MessageId);
+            if (!lockAcquired)
             {
                 _logger.LogWarning(
                     "Duplicate message detected for OrderId={OrderId} (MessageId={MessageId}, DeliveryTag={DeliveryTag}). Skipping email send and ACKing.",
@@ -173,9 +176,6 @@ public sealed class Worker : BackgroundService
 
             await ProcessOrderMessageAsync(message);
 
-            // B4-3: تسجيل الطلب في السجل الدائم بعد نجاح الإرسال وقبل إرسال Ack
-            await _processedOrderStore.MarkAsProcessedAsync(message.OrderId, message.MessageId);
-
             // B2-3: إرسال Ack يدوي فقط بعد نجاح المعالجة بالكامل
             channel.BasicAck(deliveryTag: args.DeliveryTag, multiple: false);
 
@@ -188,6 +188,21 @@ public sealed class Worker : BackgroundService
         }
         catch (Exception ex)
         {
+            if (lockAcquired)
+            {
+                try
+                {
+                    await _processedOrderStore.ReleaseAsync(message.OrderId);
+                }
+                catch (Exception releaseEx)
+                {
+                    _logger.LogWarning(
+                        releaseEx,
+                        "Failed to release idempotency lock in Redis for OrderId={OrderId} after processing error.",
+                        message.OrderId);
+                }
+            }
+
             _logger.LogError(
                 ex,
                 "All {MaxAttempts} retry attempts exhausted for MessageId={MessageId}, OrderId={OrderId}, DeliveryTag={DeliveryTag}. Rejecting message to DLQ '{Dlq}' (requeue=false).",

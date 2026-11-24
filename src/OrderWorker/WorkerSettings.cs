@@ -70,3 +70,52 @@ public sealed class SmtpSettings
         };
     }
 }
+public sealed class RedisSettings
+{
+    public string Host { get; init; } = "redis";
+
+    public int Port { get; init; } = 6379;
+    public string? Password { get; init; }
+
+    public string KeyPrefix { get; init; } = "sent:";
+
+    public TimeSpan Ttl { get; init; } = TimeSpan.FromDays(7);
+
+    public static RedisSettings FromEnvironment()
+    {
+        var host = Environment.GetEnvironmentVariable("REDIS_HOST");
+        var portRaw = Environment.GetEnvironmentVariable("REDIS_PORT");
+        var password = Environment.GetEnvironmentVariable("REDIS_PASSWORD");
+        var ttlHoursRaw = Environment.GetEnvironmentVariable("REDIS_IDEMPOTENCY_TTL_HOURS");
+        var resolvedHost = string.IsNullOrWhiteSpace(host) ? "redis" : host.Trim();
+        var resolvedPort = int.TryParse(portRaw, out var port) && port > 0 ? port : 6379;
+        var resolvedPassword = string.IsNullOrWhiteSpace(password) ? null : password.Trim();
+        var ttlHours = int.TryParse(ttlHoursRaw, out var hours) && hours > 0 ? hours : 168;
+
+        return new RedisSettings
+        {
+            Host = resolvedHost,
+            Port = resolvedPort,
+            Password = resolvedPassword,
+            KeyPrefix = "sent:",
+            Ttl = TimeSpan.FromHours(ttlHours)
+        };
+    }
+
+    public string BuildConnectionString()
+    {
+        var parts = new List<string>
+        {
+            $"{Host}:{Port}",
+            "abortConnect=false",
+            "connectTimeout=3000"
+        };
+
+        if (!string.IsNullOrWhiteSpace(Password))
+        {
+            parts.Add($"password={Password}");
+        }
+
+        return string.Join(",", parts);
+    }
+}
