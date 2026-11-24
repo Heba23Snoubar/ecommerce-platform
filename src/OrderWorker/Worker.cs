@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 using OrderWorker.Implements;
 using OrderWorker.Interface;
@@ -160,12 +160,11 @@ public sealed class Worker : BackgroundService
 
         try
         {
-            // حجز ذري في Redis (SET NX) لمنع السباق بين نسخ order-worker المتعددة
-            lockAcquired = await _processedOrderStore.TryAcquireAsync(message.OrderId, message.MessageId);
-            if (!lockAcquired)
+            // 1) هل أُرسل البريد فعلاً من قبل؟ العلامة النهائية تُكتب بعد نجاح الإرسال فقط
+            if (await _processedOrderStore.HasBeenProcessedAsync(message.OrderId))
             {
                 _logger.LogWarning(
-                    "Duplicate message detected for OrderId={OrderId} (MessageId={MessageId}, DeliveryTag={DeliveryTag}). Skipping email send and ACKing.",
+                    "Duplicate message detected for OrderId={OrderId} (MessageId={MessageId}, DeliveryTag={DeliveryTag}): email already sent. Skipping send and ACKing.",
                     message.OrderId,
                     message.MessageId,
                     args.DeliveryTag);
@@ -174,9 +173,26 @@ public sealed class Worker : BackgroundService
                 return;
             }
 
+            // 2) حجز مؤقت (lease) يمنع عاملين من إرسال الطلب نفسه معاً، وينتهي تلقائياً إن مات صاحبه
+            lockAcquired = await _processedOrderStore.TryAcquireAsync(message.OrderId, message.MessageId);
+            if (!lockAcquired)
+            {
+                _logger.LogInformation(
+                    "OrderId={OrderId} is being processed by another worker or its lease has not expired yet (DeliveryTag={DeliveryTag}, Redelivered={Redelivered}). Requeueing in 2s.",
+                    message.OrderId,
+                    args.DeliveryTag,
+                    args.Redelivered);
+
+                await Task.Delay(TimeSpan.FromSeconds(2));
+                channel.BasicNack(deliveryTag: args.DeliveryTag, multiple: false, requeue: true);
+                return;
+            }
+
             await ProcessOrderMessageAsync(message);
 
-            // B2-3: إرسال Ack يدوي فقط بعد نجاح المعالجة بالكامل
+            await _processedOrderStore.MarkAsProcessedAsync(message.OrderId, message.MessageId);
+            await _processedOrderStore.ReleaseAsync(message.OrderId);
+            lockAcquired = false;
             channel.BasicAck(deliveryTag: args.DeliveryTag, multiple: false);
 
             _logger.LogInformation(
