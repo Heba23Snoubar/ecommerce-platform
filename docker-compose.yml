@@ -66,9 +66,7 @@ x-appservice-common: &appservice-common
    start_period: 15s
 
   restart: unless-stopped
-  networks:
-    - default
-    - proxy
+
 
 services:
 
@@ -215,32 +213,17 @@ services:
   # Nginx Load Balancer
   # =========================================
   nginx:
-   image: nginx:alpine
-   ports:
-     - "8088:80"
-   volumes:
-     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-   depends_on:
-     - app1
-     - app2
-     - app3
-   restart: unless-stopped
-   networks:
-     proxy:
-        ipv4_address: 172.24.0.5
-
-    # =========================================
-  # React Frontend
-  # =========================================
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: nginx:alpine
     ports:
-      - "3000:80"
+      - "8088:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app1
+      - app2
+      - app3
     restart: unless-stopped
-    networks:
-      - proxy
+
   # =========================================
   # RabbitMQ Message Broker
   # =========================================
@@ -341,15 +324,3 @@ volumes:
   rabbitmq-data:
   order-worker-data:
   redis-data:
-
-networks:
-  default:
-    external: true
-    name: ecommerce-platform_default
-
-  proxy:
-    name: ecommerce-platform_proxy
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.24.0.0/24

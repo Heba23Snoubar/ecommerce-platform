@@ -4,7 +4,6 @@ using Catalog.Module.Endpoints.Contoller;
 using Catalog.Module.Infrastructure;
 using Infrastructure.Warehouse;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Notifications.Module;
@@ -12,14 +11,12 @@ using Orders.Module;
 using Shared.Database;
 using Shared.Errors;
 using Shared.Middleware;
-using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Users.Module;
-using Microsoft.AspNetCore.HttpOverrides;
-using System.Net;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Register Modules & Infrastructure
@@ -50,22 +47,6 @@ if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
     throw new InvalidOperationException(
         "JWT_KEY must contain at least 32 bytes.");
 }
-
-
-
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders =
-        ForwardedHeaders.XForwardedFor |
-        ForwardedHeaders.XForwardedProto;
-
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
-
-    options.KnownProxies.Add(IPAddress.Parse("172.24.0.5")); 
-    options.KnownProxies.Add(IPAddress.Parse("::ffff:172.24.0.5"));
-});
-
 
 // Authentication
 builder.Services
@@ -210,8 +191,6 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-
-app.UseForwardedHeaders();
 
 // Apply Database Migrations
 app.Services.MigrateUsersModule();
