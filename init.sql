@@ -24,7 +24,7 @@ CREATE SCHEMA users AUTHORIZATION users_role;
 CREATE SCHEMA products AUTHORIZATION products_role;
 CREATE SCHEMA orders AUTHORIZATION orders_role;
 CREATE SCHEMA notifications AUTHORIZATION notifications_role;
-CREATE SCHEMA cart AUTHORIZATION cart_role; -- <-- إنشاء الـ Schema وربط ملكيتها بدور السلة
+CREATE SCHEMA carts AUTHORIZATION cart_role; -- <-- إنشاء الـ Schema وربط ملكيتها بدور السلة
 
 -- =========================================
 -- 4. Set default search_path for each role (اختياري لكنه ممتاز جداً)
