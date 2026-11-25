@@ -5,7 +5,7 @@ using Users.Contracts;
 using Users.Module.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.RateLimiting;
+using Users.Module.Filters;
 
 namespace Users.Module.Controllers;
 
@@ -40,7 +40,7 @@ public sealed class UsersController : ControllerBase
             response);
     }
 
-    [EnableRateLimiting("login")]
+    [ServiceFilter(typeof(LoginRateLimitFilter))]
     [HttpPost("login")]
     [ProducesResponseType(
         typeof(AuthResponse),
