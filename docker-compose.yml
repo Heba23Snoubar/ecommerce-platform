@@ -226,6 +226,7 @@ services:
      - app3
    restart: unless-stopped
    networks:
+     default: {}  
      proxy:
        ipv4_address: ${NGINX_PROXY_IP:-172.24.0.5}
 
