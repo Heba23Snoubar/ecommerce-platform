@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace Shared.Database
 {
@@ -13,15 +14,18 @@ namespace Shared.Database
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMemoryCache _cache;
+        private readonly ILogger<DatabaseRoutingContext> _logger;
 
         private static readonly TimeSpan WriteStickyDuration = TimeSpan.FromSeconds(5);
 
         public DatabaseRoutingContext(
             IHttpContextAccessor httpContextAccessor,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            ILogger<DatabaseRoutingContext> logger)
         {
             _httpContextAccessor = httpContextAccessor;
             _cache = cache;
+            _logger = logger;
         }
 
         public bool ShouldUsePrimaryDatabase()
@@ -42,7 +46,7 @@ namespace Shared.Database
                 return true;
             }
 
-             return context.Items.TryGetValue(
+            return context.Items.TryGetValue(
                        ReadYourOwnWritesMiddleware.UsePrimaryDatabaseItemKey,
                        out var value)
                    && value is true;
@@ -56,7 +60,7 @@ namespace Shared.Database
                 return;
             }
 
-             context.Items[ReadYourOwnWritesMiddleware.UsePrimaryDatabaseItemKey] = true;
+            context.Items[ReadYourOwnWritesMiddleware.UsePrimaryDatabaseItemKey] = true;
         }
         public string ResolveConnectionString(string primaryConnectionString, string? replicaConnectionString = null)
         {
@@ -66,23 +70,24 @@ namespace Shared.Database
 
             if (usePrimary || !IsReplicaHealthy())
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"[DB-ROUTING] {method} {path} --> PRIMARY DB (Port 5432)");
-                Console.ResetColor();
+                _logger.LogDebug(
+                    "[DB-ROUTING] {Method} {Path} --> PRIMARY DB (app-db:5432)",
+                    method,
+                    path);
                 return primaryConnectionString;
             }
 
-
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"[DB-ROUTING] {method} {path} --> READ REPLICA DB (app-db-replica:5432)");
-            Console.ResetColor();
+            _logger.LogDebug(
+                "[DB-ROUTING] {Method} {Path} --> READ REPLICA DB (app-db-replica:5432)",
+                method,
+                path);
 
             if (!string.IsNullOrWhiteSpace(replicaConnectionString))
             {
-            return replicaConnectionString;
+                return replicaConnectionString;
             }
 
-           return primaryConnectionString.Replace("Host=app-db", "Host=app-db-replica");
+            return primaryConnectionString.Replace("Host=app-db", "Host=app-db-replica");
         }
 
 
@@ -119,7 +124,7 @@ namespace Shared.Database
                 }
             });
         }
-         
+
         private static IEnumerable<string> GetClientKeys(HttpContext context)
         {
             var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
@@ -135,4 +140,5 @@ namespace Shared.Database
         }
     }
 
+    
 }

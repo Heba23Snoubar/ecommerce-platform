@@ -16,13 +16,12 @@ x-appservice-common: &appservice-common
     JWT_AUDIENCE: ${JWT_AUDIENCE}
 
     # PostgreSQL - Main Application Database
-    ConnectionStrings__CatalogDb: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=products_role;Password=${PRODUCTS_DB_PASSWORD}"
-    ConnectionStrings__CatalogDbReplica: "Host=app-db-replica;Port=5432;Database=${APP_DB_NAME};Username=products_role;Password=${PRODUCTS_DB_PASSWORD}"
-    ConnectionStrings__Users: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=users_role;Password=${USERS_DB_PASSWORD}"
-    ConnectionStrings__Orders: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=orders_role;Password=${ORDERS_DB_PASSWORD}"
-    ConnectionStrings__Notifications: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=notifications_role;Password=${NOTIFICATIONS_DB_PASSWORD}"
-    ConnectionStrings__CartDb: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=cart_role;Password=${CART_DB_PASSWORD}"
-
+    ConnectionStrings__CatalogDb: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=products_role;Password=${PRODUCTS_DB_PASSWORD};Maximum Pool Size=15"
+    ConnectionStrings__CatalogDbReplica: "Host=app-db-replica;Port=5432;Database=${APP_DB_NAME};Username=products_role;Password=${PRODUCTS_DB_PASSWORD};Maximum Pool Size=15"
+    ConnectionStrings__Users: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=users_role;Password=${USERS_DB_PASSWORD};Maximum Pool Size=15"
+    ConnectionStrings__Orders: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=orders_role;Password=${ORDERS_DB_PASSWORD};Maximum Pool Size=15"
+    ConnectionStrings__Notifications: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=notifications_role;Password=${NOTIFICATIONS_DB_PASSWORD};Maximum Pool Size=15"
+    ConnectionStrings__CartDb: "Host=app-db;Port=5432;Database=${APP_DB_NAME};Username=cart_role;Password=${CART_DB_PASSWORD};Maximum Pool Size=15"
     # Redis
     REDIS_CONNECTION_STRING: "redis:6379,abortConnect=false,connectTimeout=3000"
 
@@ -83,6 +82,8 @@ services:
     command:
       - "postgres"
       - "-c"
+      - "max_connections=300"
+      - "-c"
       - "wal_level=replica"
       - "-c"
       - "max_wal_senders=10"
@@ -118,7 +119,7 @@ services:
         rm -rf /var/lib/postgresql/data/*
         pg_basebackup -h app-db -D /var/lib/postgresql/data -U replicator -v -P -R -X stream
       fi
-      exec docker-entrypoint.sh postgres -c hot_standby=on
+      exec docker-entrypoint.sh postgres -c hot_standby=on -c max_connections=300
       "
     volumes:
       - app-db-replica-data:/var/lib/postgresql/data
