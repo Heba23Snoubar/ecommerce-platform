@@ -228,6 +228,7 @@ services:
    networks:
      proxy:
        ipv4_address: ${NGINX_PROXY_IP:-172.24.0.5}
+     default:
 
 
     # =========================================
